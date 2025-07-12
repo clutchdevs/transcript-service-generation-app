@@ -3,18 +3,18 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Button } from '../../../../shared/components/ui/button/button';
+import { InputComponent } from '../../../../shared/components/ui/input/input';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Button],
+  imports: [CommonModule, ReactiveFormsModule, Button, InputComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
 export class Login {
   loginForm: FormGroup;
   isLoading = signal(false);
-  showPassword = signal(false);
 
   constructor(private fb: FormBuilder, private router: Router) {
     this.loginForm = this.fb.group({
@@ -24,9 +24,7 @@ export class Login {
     });
   }
 
-  togglePasswordVisibility() {
-    this.showPassword.update(show => !show);
-  }
+
 
   onSubmit() {
     if (this.loginForm.valid) {
