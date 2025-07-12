@@ -3,12 +3,14 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "esModuleInterop": true,
     "outDir": "./out-tsc/spec",
     "types": [
-      "jasmine"
+      "jest"
     ]
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "./setup-jest.ts"
   ]
 }
