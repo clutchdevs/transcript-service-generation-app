@@ -1,0 +1,141 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+      <div class="mx-auto h-12 w-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+        <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+      </div>
+      <h2 class="mt-6 text-3xl font-bold text-gray-900">
+        Iniciar sesión
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Accede a tu cuenta para continuar
+      </p>
+    </div>
+
+    <!-- Success Alert -->
+    @if (success()) {
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-green-800">
+              {{ success() }}
+            </p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-800">
+              {{ error() }}
+            </p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+      <div class="space-y-4">
+        <!-- Email Field -->
+        <app-input
+          label="Correo electrónico"
+          type="email"
+          placeholder="tu@email.com"
+          formControlName="email"
+          icon="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+          iconPosition="right"
+          [error]="emailError()"
+          [required]="true"
+          (input)="onInputChange()"
+        />
+
+        <!-- Password Field -->
+        <app-input
+          label="Contraseña"
+          type="password"
+          placeholder="••••••••"
+          formControlName="password"
+          [error]="passwordError()"
+          [showPasswordToggle]="true"
+          [required]="true"
+          (input)="onInputChange()"
+        />
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input
+              id="remember-me"
+              type="checkbox"
+              formControlName="rememberMe"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+              Recordarme
+            </label>
+          </div>
+          <div class="text-sm">
+            <app-button
+              type="button"
+              variant="ghost"
+              size="sm"
+              (clicked)="goToForgotPassword()"
+              [disabled]="isLoading()"
+            >
+              ¿Olvidaste tu contraseña?
+            </app-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <app-button
+          type="submit"
+          variant="primary"
+          [loading]="isLoading()"
+          [fullWidth]="true"
+          [disabled]="!isFormValid() || isLoading()"
+        >
+          @if (isLoading()) {
+            Iniciando sesión...
+          } @else {
+            Iniciar sesión
+          }
+        </app-button>
+      </div>
+
+      <!-- Sign Up Link -->
+      <div class="text-center text-sm text-gray-600 flex items-center justify-center gap-2">
+        <span>¿No tienes una cuenta?</span>
+        <app-button
+          type="button"
+          variant="ghost"
+          size="sm"
+          (clicked)="goToRegister()"
+          [disabled]="isLoading()"
+        >
+          Regístrate aquí
+        </app-button>
+      </div>
+    </form>
+  </div>
+</div>
