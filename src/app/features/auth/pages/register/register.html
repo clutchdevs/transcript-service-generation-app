@@ -1,0 +1,161 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+      <div class="mx-auto h-12 w-12 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+        <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+        </svg>
+      </div>
+      <h2 class="mt-6 text-3xl font-bold text-gray-900">
+        Crear cuenta
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Únete a nuestra plataforma de transcripciones
+      </p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-800">
+              {{ error() }}
+            </p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Register Form -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+      <div class="space-y-4">
+        <!-- Name Fields -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- First Name Field -->
+          <app-input
+            label="Nombre"
+            type="text"
+            placeholder="Tu nombre"
+            formControlName="firstName"
+            [error]="firstNameError()"
+            [required]="true"
+            (input)="onInputChange()"
+          />
+
+          <!-- Last Name Field -->
+          <app-input
+            label="Apellido"
+            type="text"
+            placeholder="Tu apellido"
+            formControlName="lastName"
+            [error]="lastNameError()"
+            [required]="true"
+            (input)="onInputChange()"
+          />
+        </div>
+
+        <!-- Email Field -->
+        <app-input
+          label="Correo electrónico"
+          type="email"
+          placeholder="tu@email.com"
+          formControlName="email"
+          icon="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+          iconPosition="right"
+          [error]="emailError()"
+          [required]="true"
+          (input)="onInputChange()"
+        />
+
+        <!-- Password Fields -->
+        <div class="space-y-4">
+          <!-- Password Field -->
+          <app-input
+            label="Contraseña"
+            type="password"
+            placeholder="••••••••"
+            formControlName="password"
+            [error]="passwordError()"
+            [showPasswordToggle]="true"
+            [required]="true"
+            (input)="onInputChange()"
+          />
+
+          <!-- Confirm Password Field -->
+          <app-input
+            label="Confirmar contraseña"
+            type="password"
+            placeholder="••••••••"
+            formControlName="confirmPassword"
+            [error]="confirmPasswordError()"
+            [showPasswordToggle]="true"
+            [required]="true"
+            (input)="onInputChange()"
+          />
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <input
+              id="accept-terms"
+              type="checkbox"
+              formControlName="acceptTerms"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="accept-terms" class="text-gray-700">
+              Acepto los
+              <a href="#" class="text-blue-600 hover:text-blue-500 underline">
+                términos y condiciones
+              </a>
+              y la
+              <a href="#" class="text-blue-600 hover:text-blue-500 underline">
+                política de privacidad
+              </a>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <app-button
+          type="submit"
+          variant="primary"
+          [loading]="isLoading()"
+          [fullWidth]="true"
+          [disabled]="!isFormValid() || isLoading()"
+        >
+          @if (isLoading()) {
+            Creando cuenta...
+          } @else {
+            Crear cuenta
+          }
+        </app-button>
+      </div>
+
+      <!-- Login Link -->
+      <div class="text-center text-sm text-gray-600 flex items-center justify-center gap-2">
+        <span>¿Ya tienes una cuenta?</span>
+        <app-button
+          type="button"
+          variant="ghost"
+          size="sm"
+          (clicked)="goToLogin()"
+          [disabled]="isLoading()"
+        >
+          Inicia sesión aquí
+        </app-button>
+      </div>
+    </form>
+  </div>
+</div>

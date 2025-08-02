@@ -1,0 +1,105 @@
+<!-- Ejemplos de uso del componente Button -->
+
+<div class="p-8 space-y-8">
+  <h1 class="text-2xl font-bold text-gray-900">Componente Button - Ejemplos</h1>
+
+  <!-- Variantes -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-800">Variantes</h2>
+    <div class="flex flex-wrap gap-4">
+      <app-button variant="primary">
+        Primary Button
+      </app-button>
+
+      <app-button variant="secondary">
+        Secondary Button
+      </app-button>
+
+      <app-button variant="outline">
+        Outline Button
+      </app-button>
+
+      <app-button variant="ghost">
+        Ghost Button
+      </app-button>
+    </div>
+  </section>
+
+  <!-- Tamaños -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-800">Tamaños</h2>
+    <div class="flex flex-wrap items-center gap-4">
+      <app-button size="sm">
+        Small
+      </app-button>
+
+      <app-button size="md">
+        Medium
+      </app-button>
+
+      <app-button size="lg">
+        Large
+      </app-button>
+    </div>
+  </section>
+
+  <!-- Estados -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-800">Estados</h2>
+    <div class="flex flex-wrap gap-4">
+      <app-button>
+        Normal
+      </app-button>
+
+      <app-button [loading]="true">
+        Loading
+      </app-button>
+
+      <app-button [disabled]="true">
+        Disabled
+      </app-button>
+    </div>
+  </section>
+
+  <!-- Con iconos -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-800">Con iconos</h2>
+    <div class="flex flex-wrap gap-4">
+      <app-button icon="M12 4v16m8-8H4">
+        Con icono izquierdo
+      </app-button>
+
+      <app-button
+        icon="M9 5l7 7-7 7"
+        iconPosition="right"
+      >
+        Con icono derecho
+      </app-button>
+
+      <app-button
+        icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        [fullWidth]="true"
+      >
+        Botón completo con icono
+      </app-button>
+    </div>
+  </section>
+
+  <!-- Ancho completo -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-800">Ancho completo</h2>
+    <div class="max-w-md space-y-4">
+      <app-button [fullWidth]="true">
+        Botón de ancho completo
+      </app-button>
+
+      <app-button
+        variant="outline"
+        [fullWidth]="true"
+        icon="M12 4v16m8-8H4"
+      >
+        Outline con ancho completo
+      </app-button>
+    </div>
+  </section>
+</div>

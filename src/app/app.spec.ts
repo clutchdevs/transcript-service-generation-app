@@ -1,11 +1,9 @@
-import { render, screen } from '@testing-library/angular';
+import { render } from '@testing-library/angular';
 import { App } from './app';
 
 describe('AppComponent', () => {
-  it('should render the title', async () => {
-    await render(App);
-
-    const title = screen.getByRole('heading', {name:'Hello, transcript-service-generation-app'})
-    expect(title).toBeTruthy();
+  it('should render the router outlet', async () => {
+    const { container } = await render(App);
+    expect(container.querySelector('router-outlet')).toBeTruthy();
   });
 });
