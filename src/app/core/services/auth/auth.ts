@@ -27,10 +27,21 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface RegisterResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
 }
 
 export interface ResetPasswordRequest {
@@ -111,22 +122,25 @@ export class Auth {
    * Register new user
    * @param userData - Registration data
    */
-  async register(userData: RegisterRequest): Promise<void> {
+  async register(userData: RegisterRequest): Promise<RegisterResponse> {
     this.updateLoading(true);
     this.clearError();
 
     try {
-      const response = await this.api.post<AuthResponse>('/api/auth/register', userData).toPromise();
+      const response = await this.api.post<RegisterResponse>('/api/auth/register', userData).toPromise();
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken);
-        this.updateUser(response.data.user);
-        this.updateAuthState(true);
+        // Registration successful, but no tokens provided
+        // User needs to login separately
+        return response.data;
       } else {
         this.setError(response?.error || 'Registration failed');
+        throw new Error(response?.error || 'Registration failed');
       }
     } catch (error: any) {
-      this.setError(error?.message || 'Registration failed');
+      const errorMessage = error?.message || 'Registration failed';
+      this.setError(errorMessage);
+      throw error; // Re-throw to let component handle it
     } finally {
       this.updateLoading(false);
     }
@@ -213,6 +227,28 @@ export class Auth {
       }
     } catch (error: any) {
       this.setError(error?.message || 'Password reset failed');
+    } finally {
+      this.updateLoading(false);
+    }
+  }
+
+  /**
+   * Request password reset via email
+   * @param email - User email address
+   */
+  async forgotPassword(email: string): Promise<void> {
+    this.updateLoading(true);
+    this.clearError();
+
+    try {
+      const requestData: ForgotPasswordRequest = { email };
+      const response = await this.api.post<MessageResponse>('/api/auth/forgot-password', requestData).toPromise();
+
+      if (!response?.success) {
+        this.setError(response?.error || 'Failed to send reset email');
+      }
+    } catch (error: any) {
+      this.setError(error?.message || 'Failed to send reset email');
     } finally {
       this.updateLoading(false);
     }
@@ -323,5 +359,14 @@ export class Auth {
       return from(Promise.reject(new Error('No refresh token available')));
     }
     return this.api.post<AuthResponse>('/api/auth/refresh-token', { refreshToken });
+  }
+
+  /**
+   * Request password reset via email (Observable version)
+   * @param email - User email address
+   */
+  forgotPassword$(email: string): Observable<ApiResponse<MessageResponse>> {
+    const requestData: ForgotPasswordRequest = { email };
+    return this.api.post<MessageResponse>('/api/auth/forgot-password', requestData);
   }
 }

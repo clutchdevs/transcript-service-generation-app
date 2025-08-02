@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, effect, OnDestroy } from '@angular
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { InputComponent } from '../../../../shared/components/ui/input/input';
 import { Auth, LoginRequest } from '../../../../core/services/auth/auth';
@@ -18,15 +19,20 @@ export class Login implements OnDestroy {
   private fb = inject(FormBuilder);
   private auth = inject(Auth);
   private navigation = inject(NavigationService);
+  private route = inject(ActivatedRoute);
   private destroy$ = new Subject<void>();
 
   // Form
   loginForm: FormGroup;
 
+  // Success message signal
+  private successMessage = signal<string | null>(null);
+
   // Computed signals for reactive UI - direct from Auth service
   readonly isLoading = computed(() => this.auth.isLoading());
   readonly error = computed(() => this.auth.error());
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
+  readonly success = computed(() => this.successMessage());
 
   // Form validation signal
   private formValid = signal(false);
@@ -75,6 +81,13 @@ export class Login implements OnDestroy {
 
     // Initial form validity check
     this.formValid.set(this.loginForm.valid);
+
+    // Check for registration success message
+    this.route.queryParams.subscribe(params => {
+      if (params['registered'] === 'true' && params['email']) {
+        this.successMessage.set(`¡Cuenta creada exitosamente! Por favor inicia sesión con tu email: ${params['email']}`);
+      }
+    });
   }
 
   ngOnDestroy(): void {

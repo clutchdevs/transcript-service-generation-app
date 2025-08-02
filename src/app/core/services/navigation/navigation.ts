@@ -4,12 +4,16 @@ import { Router } from '@angular/router';
 // Route constants for better maintainability
 export const ROUTES = {
   AUTH: {
-    LOGIN: '/auth/login',
+    LOGIN: '/auth',
     REGISTER: '/auth/register',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password'
   },
-  DASHBOARD: '/dashboard',
+  DASHBOARD: {
+    ROOT: '/dashboard',
+    PROFILE: '/dashboard/profile',
+    TRANSCRIPTIONS: '/dashboard/transcriptions'
+  },
   HOME: '/',
   PROFILE: '/profile'
 } as const;
@@ -55,7 +59,7 @@ export class NavigationService {
    * Navigate to dashboard
    */
   goToDashboard(): void {
-    this.router.navigate([ROUTES.DASHBOARD]);
+    this.router.navigate([ROUTES.DASHBOARD.ROOT]);
   }
 
   /**
