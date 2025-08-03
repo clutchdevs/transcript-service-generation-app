@@ -1,0 +1,71 @@
+<div class="relative">
+  <button
+    (click)="onMenuToggle()"
+    type="button"
+    class="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+    id="user-menu-button"
+    aria-expanded="false"
+    aria-haspopup="true"
+    [attr.aria-expanded]="isOpen"
+  >
+    <span class="sr-only">Abrir menú de usuario</span>
+
+    <!-- User Avatar -->
+    <app-avatar [user]="user" size="md"></app-avatar>
+
+    <!-- User Info (hidden on mobile) -->
+    <div class="hidden md:block text-left">
+      <p class="text-sm font-medium text-gray-900">{{ userDisplayName() }}</p>
+      <p class="text-xs text-gray-500">{{ userEmail() }}</p>
+    </div>
+
+    <!-- Dropdown arrow -->
+    <svg class="hidden md:block h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  <!-- User Menu Dropdown -->
+  @if (isOpen) {
+    <div
+      class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+      role="menu"
+      aria-orientation="vertical"
+      aria-labelledby="user-menu-button"
+      tabindex="-1"
+    >
+      <!-- User Info in Dropdown -->
+      <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 md:hidden">
+        <p class="font-medium">{{ userDisplayName() }}</p>
+        <p class="text-gray-500">{{ userEmail() }}</p>
+      </div>
+
+      <!-- Menu Items -->
+      <a
+        href="#"
+        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Mi perfil
+      </a>
+      <a
+        href="#"
+        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Configuración
+      </a>
+      <div class="border-t border-gray-100"></div>
+      <button
+        (click)="onLogout()"
+        class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 focus:outline-none focus:bg-red-50"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  }
+</div>
