@@ -6,6 +6,7 @@ import { Api, ApiResponse } from '../api/api';
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterRequest {
@@ -102,7 +103,7 @@ export class Auth {
       const response = await this.api.post<AuthResponse>('/api/auth/login', credentials).toPromise();
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken);
+        this.setTokens(response.data.accessToken, response.data.refreshToken, credentials.rememberMe);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
@@ -293,33 +294,39 @@ export class Auth {
   }
 
   /**
-   * Store authentication tokens in localStorage
+   * Store authentication tokens in appropriate storage based on rememberMe preference
    * @param accessToken - JWT access token
    * @param refreshToken - JWT refresh token
+   * @param rememberMe - Whether to persist tokens across browser sessions
    */
-  private setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem('auth_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+  private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = false): void {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('auth_token', accessToken);
+    storage.setItem('refresh_token', refreshToken);
   }
 
   /**
-   * Get authentication token from localStorage
+   * Get authentication token from storage (checks both sessionStorage and localStorage)
    */
   private getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    // First check sessionStorage, then localStorage
+    return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
   }
 
   /**
-   * Get refresh token from localStorage
+   * Get refresh token from storage (checks both sessionStorage and localStorage)
    */
   private getRefreshToken(): string | null {
-    return localStorage.getItem('refresh_token');
+    // First check sessionStorage, then localStorage
+    return sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token');
   }
 
   /**
-   * Remove authentication tokens from localStorage
+   * Remove authentication tokens from both storage types
    */
   private removeToken(): void {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('refresh_token');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
   }

@@ -102,7 +102,8 @@ export class Login implements OnDestroy {
     if (this.loginForm.valid) {
       const credentials: LoginRequest = {
         email: this.loginForm.get('email')?.value,
-        password: this.loginForm.get('password')?.value
+        password: this.loginForm.get('password')?.value,
+        rememberMe: this.loginForm.get('rememberMe')?.value
       };
 
       try {
