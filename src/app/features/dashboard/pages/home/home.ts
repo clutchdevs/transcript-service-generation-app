@@ -5,7 +5,7 @@ import { Auth, User } from '../../../../core/services/auth/auth';
 import { Header } from '../../components/header/header';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Sidenav } from '../../components/sidenav/sidenav';
-import { SidenavItemData } from '../../components/sidenav-item/sidenav-item';
+import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-item';
 
 @Component({
   selector: 'app-home',

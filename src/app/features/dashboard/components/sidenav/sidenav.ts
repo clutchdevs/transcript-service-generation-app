@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { SidenavHeader } from '../sidenav-header/sidenav-header';
-import { SidenavItem, SidenavItemData } from '../sidenav-item/sidenav-item';
+import { SidenavHeader } from './sidenav-header/sidenav-header';
+import { SidenavItem, SidenavItemData } from './sidenav-item/sidenav-item';
 
 export interface SidenavItemConfig {
   id: string;
