@@ -1,0 +1,43 @@
+<div class="flex items-center h-16 border-b border-gray-200"
+     [class.px-4]="!collapsed"
+     [class.px-2]="collapsed"
+     [class.justify-between]="!collapsed"
+     [class.justify-center]="collapsed">
+
+  <!-- Menu Title (hidden when collapsed) -->
+  @if (!collapsed) {
+    <h2 class="text-sm font-medium text-gray-900 uppercase tracking-wider">{{ title }}</h2>
+  }
+
+  <!-- Toggle Collapse Button -->
+  <button
+    (click)="onToggleCollapse()"
+    type="button"
+    class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+    [title]="collapsed ? 'Expandir menú' : 'Colapsar menú'"
+  >
+    <span class="sr-only">{{ collapsed ? 'Expandir' : 'Colapsar' }} menú</span>
+
+    <!-- Icon when expanded -->
+    <svg
+      *ngIf="!collapsed"
+      class="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+    </svg>
+
+    <!-- Icon when collapsed -->
+    <svg
+      *ngIf="collapsed"
+      class="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    </svg>
+  </button>
+</div>
