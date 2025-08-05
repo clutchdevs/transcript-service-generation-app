@@ -1,6 +1,6 @@
 <nav
   class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out"
-  [class]="collapsed$() ? 'w-16' : 'w-64'"
+  [class]="getSidenavClasses()"
   [class.mobile-open]="mobileOpen$()"
   [class.fixed]="mobileOpen$()"
   [class.inset-y-0]="mobileOpen$()"
@@ -9,20 +9,20 @@
 >
     <!-- Header with title and toggle button -->
     <app-sidenav-header
-      [collapsed]="collapsed$()"
+      [collapsed]="isCollapsedInCurrentView()"
       title="Menú"
       (toggleCollapse)="onToggleCollapse()"
     ></app-sidenav-header>
 
   <!-- Navigation Items -->
   <div class="flex-1 py-4"
-       [class.overflow-y-auto]="!collapsed$()"
-       [class.overflow-hidden]="collapsed$()">
+       [class.overflow-y-auto]="!isCollapsedInCurrentView()"
+       [class.overflow-hidden]="isCollapsedInCurrentView()">
     <nav class="space-y-1 px-3">
       @for (item of navigationItems(); track item.id) {
         <app-sidenav-item
           [item]="item"
-          [collapsed]="collapsed$()"
+          [collapsed]="isCollapsedInCurrentView()"
           [active]="isActive(item)"
           (itemClick)="onItemClick($event)"
         ></app-sidenav-item>

@@ -43,6 +43,25 @@ export class Sidenav {
   readonly collapsed$ = computed(() => this.isCollapsed());
   readonly mobileOpen$ = computed(() => this.isMobileOpen());
 
+  // Helper methods for responsive behavior
+  isCollapsedInCurrentView(): boolean {
+    // In mobile view, always show expanded (not collapsed)
+    if (this.mobileOpen$()) {
+      return false;
+    }
+    // In desktop view, use the collapsed state
+    return this.collapsed$();
+  }
+
+  getSidenavClasses(): string {
+    // In mobile view, always use full width
+    if (this.mobileOpen$()) {
+      return 'w-64';
+    }
+    // In desktop view, use collapsed state
+    return this.collapsed$() ? 'w-16' : 'w-64';
+  }
+
   // Default navigation items
   readonly defaultItems: SidenavItemConfig[] = [
     {
