@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Auth, ResetPasswordRequest } from '../../../../core/services/auth/auth';
@@ -8,7 +7,7 @@ import { Auth, ResetPasswordRequest } from '../../../../core/services/auth/auth'
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './reset-password.html',
   styleUrl: './reset-password.scss'
 })

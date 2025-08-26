@@ -1,5 +1,4 @@
 import { Component, Input, Output, EventEmitter, signal, computed, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SidenavHeader } from './sidenav-header/sidenav-header';
 import { SidenavItem } from './sidenav-item/sidenav-item';
@@ -16,7 +15,7 @@ export interface SidenavItemConfig {
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, SidenavHeader, SidenavItem],
+  imports: [SidenavHeader, SidenavItem],
   templateUrl: './sidenav.html',
   styleUrl: './sidenav.scss'
 })

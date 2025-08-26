@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, effect, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../../shared/components/ui/button/button';
@@ -11,7 +10,7 @@ import { NavigationService } from '../../../../core/services/navigation/navigati
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Button, InputComponent],
+  imports: [ReactiveFormsModule, Button, InputComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })

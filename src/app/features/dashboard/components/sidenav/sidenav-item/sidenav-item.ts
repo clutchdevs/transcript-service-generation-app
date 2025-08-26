@@ -1,5 +1,4 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export interface SidenavItemData {
   id: string;
@@ -13,7 +12,7 @@ export interface SidenavItemData {
 @Component({
   selector: 'app-sidenav-item',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './sidenav-item.html',
   styleUrl: './sidenav-item.scss'
 })

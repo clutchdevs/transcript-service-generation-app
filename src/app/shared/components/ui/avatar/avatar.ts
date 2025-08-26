@@ -1,11 +1,10 @@
 import { Component, Input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { User } from '../../../../core/services/auth/auth';
 
 @Component({
   selector: 'app-avatar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './avatar.html',
   styleUrl: './avatar.scss'
 })

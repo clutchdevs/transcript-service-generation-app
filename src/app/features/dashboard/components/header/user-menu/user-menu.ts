@@ -1,12 +1,11 @@
 import { Component, Input, Output, EventEmitter, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { User } from '../../../../../core/services/auth/auth';
 import { Avatar } from '../../../../../shared/components/ui/avatar/avatar';
 
 @Component({
   selector: 'app-user-menu',
   standalone: true,
-  imports: [CommonModule, Avatar],
+  imports: [Avatar],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss'
 })

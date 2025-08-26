@@ -1,5 +1,4 @@
 import { Component, inject, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, User } from '../../../../core/services/auth/auth';
 import { Header } from '../../components/header/header';
@@ -10,7 +9,7 @@ import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-i
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, Header, Button, Sidenav],
+  imports: [Header, Button, Sidenav],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })

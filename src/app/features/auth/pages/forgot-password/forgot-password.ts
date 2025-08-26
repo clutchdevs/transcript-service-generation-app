@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
 import { Auth } from '../../../../core/services/auth/auth';
@@ -8,7 +7,7 @@ import { Auth } from '../../../../core/services/auth/auth';
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './forgot-password.html',
   styleUrl: './forgot-password.scss'
 })

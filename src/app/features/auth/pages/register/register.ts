@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, effect, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { InputComponent } from '../../../../shared/components/ui/input/input';
@@ -10,7 +9,7 @@ import { NavigationService } from '../../../../core/services/navigation/navigati
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Button, InputComponent],
+  imports: [ReactiveFormsModule, Button, InputComponent],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })

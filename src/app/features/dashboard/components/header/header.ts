@@ -1,5 +1,4 @@
 import { Component, Input, Output, EventEmitter, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { User } from '../../../../core/services/auth/auth';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Logo } from '../../../../shared/components/ui/logo/logo';
@@ -14,7 +13,7 @@ export interface HeaderConfig {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, Button, Logo, UserMenu],
+  imports: [Button, Logo, UserMenu],
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
