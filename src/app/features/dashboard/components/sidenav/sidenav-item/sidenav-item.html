@@ -1,0 +1,42 @@
+<button
+  (click)="onItemClick()"
+  [disabled]="item.disabled"
+  [class]="getItemClasses()"
+  [title]="collapsed ? item.label : ''"
+  type="button"
+  class="w-full"
+  [class.justify-center]="collapsed"
+>
+  <!-- Icon -->
+  <svg
+    [class]="getIconClasses()"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    aria-hidden="true"
+  >
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon" />
+  </svg>
+
+  <!-- Label (hidden when collapsed) -->
+  @if (!collapsed) {
+    <span class="ml-3 flex-1 text-left">{{ item.label }}</span>
+  }
+
+  <!-- Badge (hidden when collapsed) -->
+  @if (item.badge && !collapsed) {
+    <span class="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-100 bg-blue-600 rounded-full">
+      {{ item.badge }}
+    </span>
+  }
+
+  <!-- Tooltip for collapsed state -->
+  @if (collapsed) {
+    <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+      {{ item.label }}
+      @if (item.badge) {
+        <span class="ml-1 text-xs">({{ item.badge }})</span>
+      }
+    </div>
+  }
+</button>

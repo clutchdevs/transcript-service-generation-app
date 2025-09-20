@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Auth, ResetPasswordRequest } from '../../../../core/services/auth/auth';
@@ -8,7 +7,7 @@ import { Auth, ResetPasswordRequest } from '../../../../core/services/auth/auth'
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './reset-password.html',
   styleUrl: './reset-password.scss'
 })
@@ -55,6 +54,9 @@ export class ResetPassword implements OnDestroy {
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
+
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
 
     // Extract token from URL query params
     this.route.queryParams

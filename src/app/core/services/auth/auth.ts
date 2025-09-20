@@ -6,6 +6,7 @@ import { Api, ApiResponse } from '../api/api';
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterRequest {
@@ -102,7 +103,7 @@ export class Auth {
       const response = await this.api.post<AuthResponse>('/api/auth/login', credentials).toPromise();
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken);
+        this.setTokens(response.data.accessToken, response.data.refreshToken, credentials.rememberMe);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
@@ -138,9 +139,23 @@ export class Auth {
         throw new Error(response?.error || 'Registration failed');
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Registration failed';
+      // Prefer specific validation feedback if available
+      let errorMessage = error?.message || 'Registration failed';
+      const issues = error?.issues as Array<any> | undefined;
+
+      if (Array.isArray(issues) && issues.length > 0) {
+        // If the only issue is email invalid, show a friendly localized message
+        const emailIssue = issues.find(i => Array.isArray(i?.path) && i.path.includes('email'));
+        if (emailIssue && (emailIssue.validation === 'email' || emailIssue.code === 'invalid_string')) {
+          errorMessage = 'Ingresa un email válido';
+        } else {
+          errorMessage = 'Hay errores en el formulario';
+        }
+      }
+
       this.setError(errorMessage);
-      throw error; // Re-throw to let component handle it
+      // Re-throw original error so the component can apply field-level errors
+      throw error;
     } finally {
       this.updateLoading(false);
     }
@@ -271,7 +286,7 @@ export class Auth {
     this.authState.update(state => ({ ...state, error }));
   }
 
-  private clearError(): void {
+  public clearError(): void {
     this.authState.update(state => ({ ...state, error: null }));
   }
 
@@ -293,33 +308,39 @@ export class Auth {
   }
 
   /**
-   * Store authentication tokens in localStorage
+   * Store authentication tokens in appropriate storage based on rememberMe preference
    * @param accessToken - JWT access token
    * @param refreshToken - JWT refresh token
+   * @param rememberMe - Whether to persist tokens across browser sessions
    */
-  private setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem('auth_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+  private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = false): void {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('auth_token', accessToken);
+    storage.setItem('refresh_token', refreshToken);
   }
 
   /**
-   * Get authentication token from localStorage
+   * Get authentication token from storage (checks both sessionStorage and localStorage)
    */
   private getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    // First check sessionStorage, then localStorage
+    return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
   }
 
   /**
-   * Get refresh token from localStorage
+   * Get refresh token from storage (checks both sessionStorage and localStorage)
    */
   private getRefreshToken(): string | null {
-    return localStorage.getItem('refresh_token');
+    // First check sessionStorage, then localStorage
+    return sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token');
   }
 
   /**
-   * Remove authentication tokens from localStorage
+   * Remove authentication tokens from both storage types
    */
   private removeToken(): void {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('refresh_token');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
   }

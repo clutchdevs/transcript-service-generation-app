@@ -1,5 +1,4 @@
 import { Component, Input as AngularInput, forwardRef, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
@@ -8,7 +7,7 @@ export type InputSize = 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-input',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './input.html',
   styleUrl: './input.scss',
   providers: [

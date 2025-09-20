@@ -1,0 +1,21 @@
+<div class="relative">
+  @if (imageUrl) {
+    <!-- User Image -->
+    <img
+      [src]="imageUrl"
+      [alt]="userDisplayName()"
+      [class]="avatarClasses"
+      class="object-cover"
+    />
+  } @else {
+    <!-- Fallback with Initials -->
+    <div [class]="avatarClasses">
+      <span [class]="textClasses">{{ userInitials() }}</span>
+    </div>
+  }
+
+  <!-- Status Indicator -->
+  @if (showStatus) {
+    <div [class]="statusClasses"></div>
+  }
+</div>
