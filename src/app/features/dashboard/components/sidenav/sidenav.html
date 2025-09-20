@@ -13,7 +13,7 @@
 
   <!-- Navigation Items -->
   <div
-    class="flex-1 py-4"
+    class="flex-1 pt-4 overflow-x-hidden"
     [class.overflow-y-auto]="!isCollapsedInCurrentView()"
     [class.overflow-hidden]="isCollapsedInCurrentView()"
   >
@@ -30,10 +30,3 @@
   </div>
 </nav>
 
-<!-- Mobile overlay -->
-@if (mobileOpen$()) {
-<div
-  class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"
-  (click)="closeMobileMenu()"
-></div>
-}

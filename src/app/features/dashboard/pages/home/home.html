@@ -14,7 +14,7 @@
   />
 
   <!-- Main Content -->
-  <div class="flex flex-1 overflow-hidden">
+  <div class="relative flex flex-1 overflow-hidden">
     <!-- Sidenav Component -->
     <app-sidenav
       [items]="sidenavItems"
@@ -25,6 +25,14 @@
       (toggleCollapse)="onSidenavToggleCollapse($event)"
       (mobileMenuClose)="onMobileMenuClose()"
     />
+
+    <!-- Content overlay (mobile only, covers content area under header) -->
+    @if (mobileMenuOpen()) {
+      <div
+        class="absolute inset-0 bg-black/50 z-30 lg:hidden"
+        (click)="onMobileMenuClose()"
+      ></div>
+    }
 
     <!-- Main Content Area -->
     <main class="flex-1 p-8 overflow-y-auto">
