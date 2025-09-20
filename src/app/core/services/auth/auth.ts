@@ -139,9 +139,23 @@ export class Auth {
         throw new Error(response?.error || 'Registration failed');
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Registration failed';
+      // Prefer specific validation feedback if available
+      let errorMessage = error?.message || 'Registration failed';
+      const issues = error?.issues as Array<any> | undefined;
+
+      if (Array.isArray(issues) && issues.length > 0) {
+        // If the only issue is email invalid, show a friendly localized message
+        const emailIssue = issues.find(i => Array.isArray(i?.path) && i.path.includes('email'));
+        if (emailIssue && (emailIssue.validation === 'email' || emailIssue.code === 'invalid_string')) {
+          errorMessage = 'Ingresa un email válido';
+        } else {
+          errorMessage = 'Hay errores en el formulario';
+        }
+      }
+
       this.setError(errorMessage);
-      throw error; // Re-throw to let component handle it
+      // Re-throw original error so the component can apply field-level errors
+      throw error;
     } finally {
       this.updateLoading(false);
     }
