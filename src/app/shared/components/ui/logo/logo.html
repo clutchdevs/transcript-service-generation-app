@@ -1,0 +1,17 @@
+<div [class]="logoClasses">
+  <!-- Logo Icon -->
+  @if (showIcon) {
+    <div class="flex-shrink-0">
+      <div [class]="iconContainerClasses">
+        <svg [class]="svgClasses" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+        </svg>
+      </div>
+    </div>
+  }
+
+  <!-- App Title -->
+  <div class="ml-3">
+    <h1 class="font-semibold text-gray-900">{{ appTitle }}</h1>
+  </div>
+</div>

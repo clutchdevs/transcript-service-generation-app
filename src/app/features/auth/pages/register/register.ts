@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, effect, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { InputComponent } from '../../../../shared/components/ui/input/input';
@@ -10,7 +9,7 @@ import { NavigationService } from '../../../../core/services/navigation/navigati
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Button, InputComponent],
+  imports: [ReactiveFormsModule, Button, InputComponent],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
@@ -56,6 +55,7 @@ export class Register implements OnDestroy {
   readonly emailError = computed(() => {
     const emailControl = this.registerForm?.get('email');
     if (emailControl?.touched && emailControl?.errors) {
+      if (emailControl.errors['server']) return emailControl.errors['server'];
       if (emailControl.errors['required']) return 'El email es requerido';
       if (emailControl.errors['email']) return 'Ingresa un email válido';
     }
@@ -66,7 +66,7 @@ export class Register implements OnDestroy {
     const passwordControl = this.registerForm?.get('password');
     if (passwordControl?.touched && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
-      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 6 caracteres';
+      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
     return '';
   });
@@ -85,12 +85,13 @@ export class Register implements OnDestroy {
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
       acceptTerms: [false, [Validators.requiredTrue]]
     }, { validators: this.passwordMatchValidator });
 
-
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
 
     // Subscribe to form changes with proper cleanup
     this.registerForm.valueChanges
@@ -148,8 +149,18 @@ export class Register implements OnDestroy {
         // Registration successful, navigate to login
         this.handleSuccessfulRegistration();
       } catch (error) {
-        // Error is handled by the Auth service
-        console.error('Registration failed:', error);
+        // If server reported email validation issue, set it on the email control
+        const anyError = error as any;
+        const issues = anyError?.issues as Array<any> | undefined;
+        if (Array.isArray(issues)) {
+          const emailIssue = issues.find(i => Array.isArray(i?.path) && i.path.includes('email'));
+          if (emailIssue && (emailIssue.validation === 'email' || emailIssue.code === 'invalid_string')) {
+            const emailControl = this.registerForm.get('email');
+            const existing = emailControl?.errors || {};
+            emailControl?.setErrors({ ...existing, server: 'Ingresa un email válido' });
+            emailControl?.markAsTouched();
+          }
+        }
       }
     } else {
       this.markFormGroupTouched();
@@ -188,10 +199,14 @@ export class Register implements OnDestroy {
    * Clear form error when user starts typing
    */
   onInputChange(): void {
-    // Clear any existing error when user starts typing
-    if (this.error()) {
-      // Trigger form validation to clear errors
-      this.registerForm.updateValueAndValidity();
+    // Clear global error and any server error on email when user types
+    this.auth.clearError();
+    const emailControl = this.registerForm.get('email');
+    if (emailControl?.errors && emailControl.errors['server']) {
+      const { server, ...rest } = emailControl.errors as any;
+      const nextErrors = Object.keys(rest).length > 0 ? rest : null;
+      emailControl.setErrors(nextErrors);
     }
+    this.registerForm.updateValueAndValidity();
   }
 }

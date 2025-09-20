@@ -1,0 +1,192 @@
+// Sidenav component styles
+:host {
+  display: block;
+  height: 100%;
+}
+
+// Main navigation container
+nav {
+  height: 100%;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+// Smooth transitions for all interactive elements
+button {
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+// Focus states for accessibility
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+// Hover effects for navigation items (only when not collapsed)
+button:hover:not(:disabled):not(.collapsed) {
+  transform: translateX(2px);
+}
+
+// Active state styling - keeping it simple and consistent
+button.active {
+  position: relative;
+  background-color: #f8fafc;
+  border-left-color: #3b82f6;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #3b82f6;
+    border-radius: 0 2px 2px 0;
+  }
+}
+
+// Simple hover states
+button:not(.active):hover {
+  background-color: #f1f5f9;
+}
+
+// Badge styling
+.badge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+// Tooltip styling for collapsed state
+.tooltip {
+  position: absolute;
+  left: 100%;
+  margin-left: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #1f2937;
+  color: white;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 50;
+  transition: opacity 0.2s ease-in-out;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 4px solid #1f2937;
+  }
+}
+
+button:hover .tooltip {
+  opacity: 1;
+}
+
+// Mobile optimizations
+@media (max-width: 1024px) {
+  :host {
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav {
+    width: 16rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+// Scrollbar styling for navigation items
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+
+    &:hover {
+      background: #9ca3af;
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  button {
+    border: 1px solid currentColor;
+  }
+
+  button.active {
+    border: 2px solid currentColor;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  button,
+  nav,
+  :host {
+    transition: none;
+  }
+
+  button:hover {
+    transform: none;
+  }
+}
+
+// Enhanced focus ring for better accessibility
+button:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+// Loading state for items (if needed)
+button.loading {
+  position: relative;
+  color: transparent;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

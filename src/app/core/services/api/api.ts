@@ -137,6 +137,16 @@ export class Api {
       }
     }
 
-    return throwError(() => new Error(errorMessage));
+    // Extract validation issues if present (e.g., ZodError format)
+    const issues = (error as any)?.error?.error?.issues || (error as any)?.error?.issues;
+
+    // Throw a structured error object so callers can handle field-level issues
+    return throwError(() => ({
+      isApiError: true,
+      message: errorMessage,
+      status: error.status,
+      issues,
+      raw: error.error
+    }));
   }
 }

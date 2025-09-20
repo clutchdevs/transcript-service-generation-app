@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, effect, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../../shared/components/ui/button/button';
@@ -11,7 +10,7 @@ import { NavigationService } from '../../../../core/services/navigation/navigati
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Button, InputComponent],
+  imports: [ReactiveFormsModule, Button, InputComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -52,7 +51,7 @@ export class Login implements OnDestroy {
     const passwordControl = this.loginForm?.get('password');
     if (passwordControl?.touched && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
-      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 6 caracteres';
+      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
     return '';
   });
@@ -60,9 +59,12 @@ export class Login implements OnDestroy {
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       rememberMe: [false]
     });
+
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
 
     // Single effect to handle successful authentication
     effect(() => {
@@ -102,7 +104,8 @@ export class Login implements OnDestroy {
     if (this.loginForm.valid) {
       const credentials: LoginRequest = {
         email: this.loginForm.get('email')?.value,
-        password: this.loginForm.get('password')?.value
+        password: this.loginForm.get('password')?.value,
+        rememberMe: this.loginForm.get('rememberMe')?.value
       };
 
       try {
