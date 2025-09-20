@@ -65,7 +65,7 @@ export class Register implements OnDestroy {
     const passwordControl = this.registerForm?.get('password');
     if (passwordControl?.touched && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
-      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 6 caracteres';
+      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
     return '';
   });
@@ -84,7 +84,7 @@ export class Register implements OnDestroy {
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
       acceptTerms: [false, [Validators.requiredTrue]]
     }, { validators: this.passwordMatchValidator });

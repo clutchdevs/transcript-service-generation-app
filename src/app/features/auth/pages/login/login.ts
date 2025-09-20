@@ -51,7 +51,7 @@ export class Login implements OnDestroy {
     const passwordControl = this.loginForm?.get('password');
     if (passwordControl?.touched && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
-      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 6 caracteres';
+      if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
     return '';
   });
@@ -59,7 +59,7 @@ export class Login implements OnDestroy {
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       rememberMe: [false]
     });
 
