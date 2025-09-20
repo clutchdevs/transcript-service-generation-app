@@ -55,6 +55,9 @@ export class ResetPassword implements OnDestroy {
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
+
     // Extract token from URL query params
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))

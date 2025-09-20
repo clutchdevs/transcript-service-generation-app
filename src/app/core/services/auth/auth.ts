@@ -272,7 +272,7 @@ export class Auth {
     this.authState.update(state => ({ ...state, error }));
   }
 
-  private clearError(): void {
+  public clearError(): void {
     this.authState.update(state => ({ ...state, error: null }));
   }
 

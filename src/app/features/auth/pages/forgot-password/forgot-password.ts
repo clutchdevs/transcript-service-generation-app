@@ -42,6 +42,9 @@ export class ForgotPassword implements OnDestroy {
       email: ['', [Validators.required, Validators.email]]
     });
 
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
+
     // Subscribe to form changes to update validation state
     this.forgotForm.valueChanges
       .pipe(takeUntil(this.destroy$))

@@ -89,7 +89,8 @@ export class Register implements OnDestroy {
       acceptTerms: [false, [Validators.requiredTrue]]
     }, { validators: this.passwordMatchValidator });
 
-
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
 
     // Subscribe to form changes with proper cleanup
     this.registerForm.valueChanges

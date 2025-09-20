@@ -63,6 +63,9 @@ export class Login implements OnDestroy {
       rememberMe: [false]
     });
 
+    // Clear any existing errors when component initializes
+    this.auth.clearError();
+
     // Single effect to handle successful authentication
     effect(() => {
       if (this.isAuthenticated()) {
