@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { Auth, User } from '../../../../core/services/auth/auth';
 import { Header } from '../../components/header/header';
@@ -17,15 +17,8 @@ export class Home {
   private auth = inject(Auth);
   private router = inject(Router);
 
-  // Mock user data for prototype
-  private mockUser: User = {
-    id: '1',
-    email: 'maria.garcia@empresa.com',
-    name: 'María García'
-  };
-
   // Computed signals for reactive UI
-  readonly user = computed(() => this.auth.user() || this.mockUser);
+  readonly user = computed(() => this.auth.user());
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
 
   // Sidenav state
@@ -59,7 +52,14 @@ export class Home {
     }
   ];
 
-  constructor() {}
+  constructor() {
+    // Redirect to auth if not authenticated
+    effect(() => {
+      if (!this.isAuthenticated()) {
+        this.router.navigate(['/auth']);
+      }
+    });
+  }
 
   async logout(): Promise<void> {
     try {
