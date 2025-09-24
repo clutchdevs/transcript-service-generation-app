@@ -410,49 +410,4 @@ export class Auth {
     localStorage.removeItem('refresh_token');
   }
 
-  // Legacy Observable methods for backward compatibility
-  /**
-   * Login user with email and password (Observable version)
-   * @param credentials - Login credentials
-   */
-  login$(credentials: LoginRequest): Observable<ApiResponse<AuthResponse>> {
-    return this.api.post<AuthResponse>(AUTH_ENDPOINTS.LOGIN, credentials);
-  }
-
-  /**
-   * Register new user (Observable version)
-   * @param userData - Registration data
-   */
-  register$(userData: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
-    return this.api.post<AuthResponse>(AUTH_ENDPOINTS.REGISTER, userData);
-  }
-
-  /**
-   * Logout current user (Observable version)
-   */
-  logout$(): Observable<ApiResponse<MessageResponse>> {
-    const token = this.getToken();
-    const headers = token ? this.api.createAuthHeader(token) : undefined;
-    return this.api.post<MessageResponse>(AUTH_ENDPOINTS.LOGOUT, {}, headers);
-  }
-
-  /**
-   * Refresh authentication token (Observable version)
-   */
-  refreshToken$(): Observable<ApiResponse<AuthResponse>> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return from(Promise.reject(new Error('No refresh token available')));
-    }
-    return this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken });
-  }
-
-  /**
-   * Request password reset via email (Observable version)
-   * @param email - User email address
-   */
-  forgotPassword$(email: string): Observable<ApiResponse<MessageResponse>> {
-    const requestData: ForgotPasswordRequest = { email };
-    return this.api.post<MessageResponse>(AUTH_ENDPOINTS.FORGOT_PASSWORD, requestData);
-  }
 }
