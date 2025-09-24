@@ -260,7 +260,8 @@ export class Auth {
       const headers = token ? this.api.createAuthHeader(token) : undefined;
       const response = await firstValueFrom(this.api.get<UserProfileDto>(USER_ENDPOINTS.PROFILE, undefined, headers));
 
-      if (response?.success && response.data) {
+      // Some GET endpoints may not include a `success` flag; rely on `data` presence
+      if (response?.data) {
         const mappedUser: User = {
           id: response.data.id,
           email: response.data.email,
