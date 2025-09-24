@@ -1,15 +1,15 @@
 import { Component, inject, computed, signal, effect } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
-import { Auth, User } from '../../../../core/services/auth/auth';
+import { Auth } from '../../../../core/services/auth/auth';
 import { Header } from '../../components/header/header';
-import { Button } from '../../../../shared/components/ui/button/button';
 import { Sidenav } from '../../components/sidenav/sidenav';
 import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-item';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [Header, Button, Sidenav],
+  imports: [Header, Sidenav, RouterOutlet],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
