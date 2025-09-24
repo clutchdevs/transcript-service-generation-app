@@ -107,13 +107,17 @@ export class Auth {
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
-        this.setError(response?.error || 'Login failed');
-        throw new Error(response?.error || 'Login failed');
+        const friendly = 'Correo o contraseña incorrectos';
+        this.setError(friendly);
+        throw new Error(friendly);
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Login failed';
-      this.setError(errorMessage);
-      throw error; // Re-throw to let component handle it
+      const status: number | undefined = error?.status;
+      const friendly = status && status >= 500
+        ? 'Error del servidor. Inténtalo más tarde.'
+        : 'Correo o contraseña incorrectos';
+      this.setError(friendly);
+      throw new Error(friendly); // Re-throw to let component handle it
     } finally {
       this.updateLoading(false);
     }
@@ -214,7 +218,7 @@ export class Auth {
     try {
       const token = this.getToken();
       const headers = token ? this.api.createAuthHeader(token) : undefined;
-      const response = await this.api.get<User>('/api/auth/profile', undefined, headers).toPromise();
+      const response = await this.api.get<User>('/api/user/profile', undefined, headers).toPromise();
 
       if (response?.success && response.data) {
         this.updateUser(response.data);
@@ -260,10 +264,21 @@ export class Auth {
       const response = await this.api.post<MessageResponse>('/api/auth/forgot-password', requestData).toPromise();
 
       if (!response?.success) {
-        this.setError(response?.error || 'Failed to send reset email');
+        const apiError = (response as any)?.error as string | undefined;
+        const isUserNotFound = apiError?.toLowerCase().includes('not found');
+        // Treat "user not found" as success to avoid user enumeration
+        if (!isUserNotFound) {
+          this.setError(apiError || 'Failed to send reset email');
+        }
       }
     } catch (error: any) {
-      this.setError(error?.message || 'Failed to send reset email');
+      // If backend returns 404 for unknown email, treat as success
+      const status = error?.status as number | undefined;
+      const message = (error?.message as string | undefined)?.toLowerCase();
+      const isUserNotFound = message?.includes('not found');
+      if (status !== 404 && !isUserNotFound) {
+        this.setError(error?.message || 'Failed to send reset email');
+      }
     } finally {
       this.updateLoading(false);
     }

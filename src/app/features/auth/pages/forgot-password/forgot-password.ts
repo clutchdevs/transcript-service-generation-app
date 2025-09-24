@@ -67,6 +67,8 @@ export class ForgotPassword implements OnDestroy {
       try {
         await this.auth.forgotPassword(email);
         // If no error was thrown, the request was successful
+        // Ensure any previous error is cleared before showing success
+        this.auth.clearError();
         this.isSent.set(true);
       } catch (error) {
         // Error is already handled by the Auth service
