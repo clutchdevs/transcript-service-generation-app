@@ -35,7 +35,9 @@
     }
 
     <!-- Main Content Area -->
-    <main class="flex-1 p-8 overflow-y-auto">
+    <main class="flex-1 p-8"
+          [class.overflow-y-auto]="!mobileMenuOpen()"
+          [class.overflow-hidden]="mobileMenuOpen()">
       <!-- Page Header -->
       <div class="mb-8">
         <div class="flex justify-between items-center">
