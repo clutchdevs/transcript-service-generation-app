@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { LANGUAGES, OPERATING_POINTS } from '../../../../core/integrations/speechmatics/constants';
+import { NavigationService } from '../../../../core/services/navigation/navigation';
 
 @Component({
   selector: 'app-new-transcription',
@@ -12,4 +13,10 @@ import { LANGUAGES, OPERATING_POINTS } from '../../../../core/integrations/speec
 export class NewTranscription {
   readonly languages = LANGUAGES;
   readonly operatingPoints = OPERATING_POINTS;
+
+  private navigation = new NavigationService();
+
+  onCancel(): void {
+    this.navigation.goToDashboard();
+  }
 }
