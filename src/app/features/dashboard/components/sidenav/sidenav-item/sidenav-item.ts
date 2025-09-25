@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 export interface SidenavItemData {
   id: string;
@@ -12,7 +13,7 @@ export interface SidenavItemData {
 @Component({
   selector: 'app-sidenav-item',
   standalone: true,
-  imports: [],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidenav-item.html',
   styleUrl: './sidenav-item.scss'
 })
@@ -30,23 +31,19 @@ export class SidenavItem {
 
   getItemClasses(): string {
     const baseClasses = this.collapsed
-      ? 'group relative flex items-center px-3 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-      : 'group relative flex items-center px-3 py-2 text-sm font-medium border-l-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+      ? 'group relative flex items-center px-3 py-2 text-sm font-medium transition-all duration-200'
+      : 'group relative flex items-center px-3 py-2 text-sm font-medium border-l-4 transition-all duration-200';
 
-    const stateClasses = this.active
-      ? 'bg-blue-50 border-blue-500 text-blue-700'
-      : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900';
-
+    // Keep base text color neutral; active styles come from routerLinkActive
+    const hoverClasses = 'border-transparent text-gray-600 hover:bg-blue-50 hover:text-blue-700';
     const disabledClasses = this.item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
-
     const collapsedClasses = this.collapsed ? 'collapsed' : '';
 
-    return `${baseClasses} ${stateClasses} ${disabledClasses} ${collapsedClasses}`;
+    return `${baseClasses} ${hoverClasses} ${disabledClasses} ${collapsedClasses}`;
   }
 
   getIconClasses(): string {
-    const baseClasses = 'flex-shrink-0 h-5 w-5';
-    const activeClasses = this.active ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500';
-    return `${baseClasses} ${activeClasses}`;
+    // Color is controlled in template with rla.isActive bindings to avoid conflicts
+    return 'flex-shrink-0 h-5 w-5';
   }
 }

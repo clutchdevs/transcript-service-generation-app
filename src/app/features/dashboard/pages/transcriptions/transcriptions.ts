@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Transcriptions as TranscriptionsService, TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions';
 import { Auth } from '../../../../core/services/auth/auth';
+import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
 
 @Component({
   selector: 'app-transcriptions',
@@ -13,6 +14,7 @@ import { Auth } from '../../../../core/services/auth/auth';
 export class Transcriptions {
   private transcriptions = inject(TranscriptionsService);
   private auth = inject(Auth);
+  private navigation = inject(NavigationService);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -39,5 +41,9 @@ export class Transcriptions {
         this.isLoading.set(false);
       }
     });
+  }
+
+  goToNew(): void {
+    this.navigation.navigate(ROUTES.DASHBOARD.ROOT + '/new');
   }
 }

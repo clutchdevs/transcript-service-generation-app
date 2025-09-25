@@ -11,15 +11,10 @@ export const dashboardRoutes: Routes = [
         loadComponent: () =>
           import('./pages/transcriptions/transcriptions').then(m => m.Transcriptions),
       },
+      {
+        path: 'new',
+        loadComponent: () => import('./pages/new-transcription/new-transcription').then((m) => m.NewTranscription),
+      }
     ]
-  },
-  // Future dashboard routes can be added here
-  // {
-  //   path: 'profile',
-  //   loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
-  // },
-  // {
-  //   path: 'transcriptions',
-  //   loadComponent: () => import('./pages/transcriptions/transcriptions').then((m) => m.Transcriptions),
-  // },
+  }
 ];
