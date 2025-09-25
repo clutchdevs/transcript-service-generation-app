@@ -53,6 +53,11 @@ export class Home {
   ];
 
   constructor() {
+    // Restore persisted collapsed state
+    const savedCollapsed = localStorage.getItem('sidenav_collapsed');
+    if (savedCollapsed !== null) {
+      this.sidenavCollapsedSignal.set(savedCollapsed === 'true');
+    }
     // Redirect to auth if not authenticated
     effect(() => {
       if (!this.isAuthenticated()) {
@@ -64,9 +69,11 @@ export class Home {
   async logout(): Promise<void> {
     try {
       await this.auth.logout();
-      this.router.navigate(['/auth']);
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      // Clear persisted UI state so a new user doesn't inherit it
+      localStorage.removeItem('sidenav_collapsed');
       this.router.navigate(['/auth']);
     }
   }
@@ -92,6 +99,8 @@ export class Home {
   onSidenavToggleCollapse(collapsed: boolean): void {
     console.log('Sidenav collapsed:', collapsed);
     this.sidenavCollapsedSignal.set(collapsed);
+    // Persist collapsed state across navigations/reloads
+    localStorage.setItem('sidenav_collapsed', String(collapsed));
   }
 
   onMobileMenuClose(): void {
