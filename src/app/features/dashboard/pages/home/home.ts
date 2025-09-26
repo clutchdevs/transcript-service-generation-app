@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { Auth } from '../../../../core/services/auth/auth';
+import { UI_STORAGE_KEYS } from '../../../../core/constants/storage';
 import { Header } from '../../components/header/header';
 import { Sidenav } from '../../components/sidenav/sidenav';
 import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-item';
@@ -54,14 +55,14 @@ export class Home {
 
   constructor() {
     // Restore persisted collapsed state
-    const savedCollapsed = localStorage.getItem('sidenav_collapsed');
+    const savedCollapsed = localStorage.getItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED);
     if (savedCollapsed !== null) {
       this.sidenavCollapsedSignal.set(savedCollapsed === 'true');
     }
-    // Redirect to auth if not authenticated
+    // Idempotent: ensure profile
     effect(() => {
-      if (!this.isAuthenticated()) {
-        this.router.navigate(['/auth']);
+      if (this.isAuthenticated()) {
+        this.auth.ensureProfile();
       }
     });
   }
@@ -73,7 +74,7 @@ export class Home {
       console.error('Logout failed:', error);
     } finally {
       // Clear persisted UI state so a new user doesn't inherit it
-      localStorage.removeItem('sidenav_collapsed');
+      localStorage.removeItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED);
       this.router.navigate(['/auth']);
     }
   }
@@ -100,7 +101,7 @@ export class Home {
     console.log('Sidenav collapsed:', collapsed);
     this.sidenavCollapsedSignal.set(collapsed);
     // Persist collapsed state across navigations/reloads
-    localStorage.setItem('sidenav_collapsed', String(collapsed));
+    localStorage.setItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED, String(collapsed));
   }
 
   onMobileMenuClose(): void {

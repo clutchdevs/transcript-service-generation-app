@@ -118,6 +118,7 @@ export class Auth {
 
   // Centralized state signal
   private authState = signal<AuthState>(initialState);
+  private profileLoadPromise: Promise<void> | null = null;
 
   // Computed signals for public access
   public readonly user = computed(() => this.authState().user);
@@ -277,6 +278,28 @@ export class Auth {
     } finally {
       this.updateLoading(false);
     }
+  }
+
+  /**
+   * Ensure user profile is loaded exactly once.
+   * If already loaded or loading, reuse the existing state/promise.
+   */
+  ensureProfile(): Promise<void> {
+    // If we already have a user, nothing to do
+    if (this.user()) {
+      return Promise.resolve();
+    }
+    // Reuse in-flight load if any
+    if (this.profileLoadPromise) {
+      return this.profileLoadPromise;
+    }
+    // Kick off load and cache promise
+    this.profileLoadPromise = this.getProfile()
+      .catch(() => { /* swallow, state already updated in getProfile */ })
+      .finally(() => {
+        this.profileLoadPromise = null;
+      });
+    return this.profileLoadPromise;
   }
 
   /**
