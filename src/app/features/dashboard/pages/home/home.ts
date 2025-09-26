@@ -1,15 +1,16 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
-import { Auth, User } from '../../../../core/services/auth/auth';
+import { Auth } from '../../../../core/services/auth/auth';
+import { UI_STORAGE_KEYS } from '../../../../core/constants/storage';
 import { Header } from '../../components/header/header';
-import { Button } from '../../../../shared/components/ui/button/button';
 import { Sidenav } from '../../components/sidenav/sidenav';
 import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-item';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [Header, Button, Sidenav],
+  imports: [Header, Sidenav, RouterOutlet],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
@@ -17,15 +18,8 @@ export class Home {
   private auth = inject(Auth);
   private router = inject(Router);
 
-  // Mock user data for prototype
-  private mockUser: User = {
-    id: '1',
-    email: 'maria.garcia@empresa.com',
-    name: 'María García'
-  };
-
   // Computed signals for reactive UI
-  readonly user = computed(() => this.auth.user() || this.mockUser);
+  readonly user = computed(() => this.auth.user());
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
 
   // Sidenav state
@@ -42,7 +36,7 @@ export class Home {
       id: 'transcriptions',
       label: 'Mis transcripciones',
       icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      route: '/dashboard',
+      route: '/dashboard/transcriptions',
       badge: '12'
     },
     {
@@ -59,14 +53,28 @@ export class Home {
     }
   ];
 
-  constructor() {}
+  constructor() {
+    // Restore persisted collapsed state
+    const savedCollapsed = localStorage.getItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED);
+    if (savedCollapsed !== null) {
+      this.sidenavCollapsedSignal.set(savedCollapsed === 'true');
+    }
+    // Idempotent: ensure profile
+    effect(() => {
+      if (this.isAuthenticated()) {
+        this.auth.ensureProfile();
+      }
+    });
+  }
 
   async logout(): Promise<void> {
     try {
       await this.auth.logout();
-      this.router.navigate(['/auth']);
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      // Clear persisted UI state so a new user doesn't inherit it
+      localStorage.removeItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED);
       this.router.navigate(['/auth']);
     }
   }
@@ -92,6 +100,8 @@ export class Home {
   onSidenavToggleCollapse(collapsed: boolean): void {
     console.log('Sidenav collapsed:', collapsed);
     this.sidenavCollapsedSignal.set(collapsed);
+    // Persist collapsed state across navigations/reloads
+    localStorage.setItem(UI_STORAGE_KEYS.SIDENAV_COLLAPSED, String(collapsed));
   }
 
   onMobileMenuClose(): void {

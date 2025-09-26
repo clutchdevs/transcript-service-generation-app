@@ -1,15 +1,25 @@
-<button
+<a
+  [routerLink]="item.route || '/'"
+  routerLinkActive="active"
+  #rla="routerLinkActive"
+  [routerLinkActiveOptions]="{ exact: false }"
   (click)="onItemClick()"
-  [disabled]="item.disabled"
   [class]="getItemClasses()"
   [title]="collapsed ? item.label : ''"
-  type="button"
   class="w-full"
   [class.justify-center]="collapsed"
+  [class.bg-blue-50]="rla.isActive"
+  [class.text-blue-700]="rla.isActive"
+  [class.border-blue-500]="rla.isActive"
+  [class.border-transparent]="!rla.isActive"
+  [class.text-gray-600]="!rla.isActive"
 >
   <!-- Icon -->
   <svg
     [class]="getIconClasses()"
+    [class.text-blue-500]="rla.isActive"
+    [class.text-gray-400]="!rla.isActive"
+    [class.group-hover:text-gray-500]="!rla.isActive"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -39,4 +49,4 @@
       }
     </div>
   }
-</button>
+</a>
