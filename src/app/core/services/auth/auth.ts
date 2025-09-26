@@ -1,5 +1,5 @@
-import { Injectable, inject, signal, computed, effect } from '@angular/core';
-import { Observable, from } from 'rxjs';
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { Observable, from, firstValueFrom } from 'rxjs';
 import { Api, ApiResponse } from '../api/api';
 
 // Interfaces for authentication
@@ -39,7 +39,46 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
 }
+
+// Backend DTOs
+interface UserProfileDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+// Structured error thrown by Api service
+interface ValidationIssue {
+  path: Array<string | number>;
+  validation?: string;
+  code?: string;
+  message: string;
+}
+
+interface ApiThrownError {
+  isApiError?: boolean;
+  message: string;
+  status?: number;
+  issues?: ValidationIssue[];
+}
+
+// API endpoints
+const AUTH_ENDPOINTS = {
+  LOGIN: '/api/auth/login',
+  REGISTER: '/api/auth/register',
+  LOGOUT: '/api/auth/logout',
+  REFRESH_TOKEN: '/api/auth/refresh-token',
+  RESET_PASSWORD: '/api/auth/reset-password',
+  FORGOT_PASSWORD: '/api/auth/forgot-password'
+} as const;
+
+const USER_ENDPOINTS = {
+  PROFILE: '/api/user/profile'
+} as const;
 
 export interface ForgotPasswordRequest {
   email: string;
@@ -79,6 +118,7 @@ export class Auth {
 
   // Centralized state signal
   private authState = signal<AuthState>(initialState);
+  private profileLoadPromise: Promise<void> | null = null;
 
   // Computed signals for public access
   public readonly user = computed(() => this.authState().user);
@@ -100,20 +140,24 @@ export class Auth {
     this.clearError();
 
     try {
-      const response = await this.api.post<AuthResponse>('/api/auth/login', credentials).toPromise();
+      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.LOGIN, credentials));
 
       if (response?.success && response.data) {
         this.setTokens(response.data.accessToken, response.data.refreshToken, credentials.rememberMe);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
-        this.setError(response?.error || 'Login failed');
-        throw new Error(response?.error || 'Login failed');
+        const friendly = 'Correo o contraseña incorrectos';
+        this.setError(friendly);
+        throw new Error(friendly);
       }
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Login failed';
-      this.setError(errorMessage);
-      throw error; // Re-throw to let component handle it
+    } catch (error: unknown) {
+      const status: number | undefined = (error as ApiThrownError)?.status;
+      const friendly = status && status >= 500
+        ? 'Error del servidor. Inténtalo más tarde.'
+        : 'Correo o contraseña incorrectos';
+      this.setError(friendly);
+      throw new Error(friendly); // Re-throw to let component handle it
     } finally {
       this.updateLoading(false);
     }
@@ -128,7 +172,7 @@ export class Auth {
     this.clearError();
 
     try {
-      const response = await this.api.post<RegisterResponse>('/api/auth/register', userData).toPromise();
+      const response = await firstValueFrom(this.api.post<RegisterResponse>(AUTH_ENDPOINTS.REGISTER, userData));
 
       if (response?.success && response.data) {
         // Registration successful, but no tokens provided
@@ -138,10 +182,11 @@ export class Auth {
         this.setError(response?.error || 'Registration failed');
         throw new Error(response?.error || 'Registration failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Prefer specific validation feedback if available
-      let errorMessage = error?.message || 'Registration failed';
-      const issues = error?.issues as Array<any> | undefined;
+      const apiError = error as ApiThrownError | undefined;
+      let errorMessage = apiError?.message || 'Registration failed';
+      const issues = apiError?.issues as ValidationIssue[] | undefined;
 
       if (Array.isArray(issues) && issues.length > 0) {
         // If the only issue is email invalid, show a friendly localized message
@@ -155,7 +200,7 @@ export class Auth {
 
       this.setError(errorMessage);
       // Re-throw original error so the component can apply field-level errors
-      throw error;
+      throw new Error(errorMessage);
     } finally {
       this.updateLoading(false);
     }
@@ -170,8 +215,8 @@ export class Auth {
     try {
       const token = this.getToken();
       const headers = token ? this.api.createAuthHeader(token) : undefined;
-      await this.api.post<MessageResponse>('/api/auth/logout', {}, headers).toPromise();
-    } catch (error) {
+      await firstValueFrom(this.api.post<MessageResponse>(AUTH_ENDPOINTS.LOGOUT, {}, headers));
+    } catch (error: unknown) {
       // Continue with logout even if API call fails
       console.warn('Logout API call failed:', error);
     } finally {
@@ -190,7 +235,7 @@ export class Auth {
         throw new Error('No refresh token available');
       }
 
-      const response = await this.api.post<AuthResponse>('/api/auth/refresh-token', { refreshToken }).toPromise();
+      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken }));
 
       if (response?.success && response.data) {
         this.setTokens(response.data.accessToken, response.data.refreshToken);
@@ -199,7 +244,7 @@ export class Auth {
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: unknown) {
       this.clearAuthState();
       return false;
     }
@@ -214,16 +259,47 @@ export class Auth {
     try {
       const token = this.getToken();
       const headers = token ? this.api.createAuthHeader(token) : undefined;
-      const response = await this.api.get<User>('/api/auth/profile', undefined, headers).toPromise();
+      const response = await firstValueFrom(this.api.get<UserProfileDto>(USER_ENDPOINTS.PROFILE, undefined, headers));
 
-      if (response?.success && response.data) {
-        this.updateUser(response.data);
+      // Some GET endpoints may not include a `success` flag; rely on `data` presence
+      if (response?.data) {
+        const mappedUser: User = {
+          id: response.data.id,
+          email: response.data.email,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          name: `${response.data.firstName ?? ''} ${response.data.lastName ?? ''}`.trim() || response.data.email
+        };
+        this.updateUser(mappedUser);
       }
-    } catch (error: any) {
-      this.setError(error?.message || 'Failed to load profile');
+    } catch (error: unknown) {
+      const apiError = error as ApiThrownError | undefined;
+      this.setError(apiError?.message || 'Failed to load profile');
     } finally {
       this.updateLoading(false);
     }
+  }
+
+  /**
+   * Ensure user profile is loaded exactly once.
+   * If already loaded or loading, reuse the existing state/promise.
+   */
+  ensureProfile(): Promise<void> {
+    // If we already have a user, nothing to do
+    if (this.user()) {
+      return Promise.resolve();
+    }
+    // Reuse in-flight load if any
+    if (this.profileLoadPromise) {
+      return this.profileLoadPromise;
+    }
+    // Kick off load and cache promise
+    this.profileLoadPromise = this.getProfile()
+      .catch(() => { /* swallow, state already updated in getProfile */ })
+      .finally(() => {
+        this.profileLoadPromise = null;
+      });
+    return this.profileLoadPromise;
   }
 
   /**
@@ -235,13 +311,14 @@ export class Auth {
     this.clearError();
 
     try {
-      const response = await this.api.post<MessageResponse>('/api/auth/reset-password', resetData).toPromise();
+      const response = await firstValueFrom(this.api.post<MessageResponse>(AUTH_ENDPOINTS.RESET_PASSWORD, resetData));
 
       if (!response?.success) {
         this.setError(response?.error || 'Password reset failed');
       }
-    } catch (error: any) {
-      this.setError(error?.message || 'Password reset failed');
+    } catch (error: unknown) {
+      const apiError = error as ApiThrownError | undefined;
+      this.setError(apiError?.message || 'Password reset failed');
     } finally {
       this.updateLoading(false);
     }
@@ -257,13 +334,25 @@ export class Auth {
 
     try {
       const requestData: ForgotPasswordRequest = { email };
-      const response = await this.api.post<MessageResponse>('/api/auth/forgot-password', requestData).toPromise();
+      const response = await firstValueFrom(this.api.post<MessageResponse>(AUTH_ENDPOINTS.FORGOT_PASSWORD, requestData));
 
       if (!response?.success) {
-        this.setError(response?.error || 'Failed to send reset email');
+        const apiError = response?.error as string | undefined;
+        const isUserNotFound = apiError?.toLowerCase().includes('not found');
+        // Treat "user not found" as success to avoid user enumeration
+        if (!isUserNotFound) {
+          this.setError(apiError || 'Failed to send reset email');
+        }
       }
-    } catch (error: any) {
-      this.setError(error?.message || 'Failed to send reset email');
+    } catch (error: unknown) {
+      // If backend returns 404 for unknown email, treat as success
+      const apiError = error as ApiThrownError | undefined;
+      const status = apiError?.status;
+      const message = apiError?.message?.toLowerCase();
+      const isUserNotFound = message?.includes('not found');
+      if (status !== 404 && !isUserNotFound) {
+        this.setError(apiError?.message || 'Failed to send reset email');
+      }
     } finally {
       this.updateLoading(false);
     }
@@ -345,49 +434,4 @@ export class Auth {
     localStorage.removeItem('refresh_token');
   }
 
-  // Legacy Observable methods for backward compatibility
-  /**
-   * Login user with email and password (Observable version)
-   * @param credentials - Login credentials
-   */
-  login$(credentials: LoginRequest): Observable<ApiResponse<AuthResponse>> {
-    return this.api.post<AuthResponse>('/api/auth/login', credentials);
-  }
-
-  /**
-   * Register new user (Observable version)
-   * @param userData - Registration data
-   */
-  register$(userData: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
-    return this.api.post<AuthResponse>('/api/auth/register', userData);
-  }
-
-  /**
-   * Logout current user (Observable version)
-   */
-  logout$(): Observable<ApiResponse<MessageResponse>> {
-    const token = this.getToken();
-    const headers = token ? this.api.createAuthHeader(token) : undefined;
-    return this.api.post<MessageResponse>('/api/auth/logout', {}, headers);
-  }
-
-  /**
-   * Refresh authentication token (Observable version)
-   */
-  refreshToken$(): Observable<ApiResponse<AuthResponse>> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return from(Promise.reject(new Error('No refresh token available')));
-    }
-    return this.api.post<AuthResponse>('/api/auth/refresh-token', { refreshToken });
-  }
-
-  /**
-   * Request password reset via email (Observable version)
-   * @param email - User email address
-   */
-  forgotPassword$(email: string): Observable<ApiResponse<MessageResponse>> {
-    const requestData: ForgotPasswordRequest = { email };
-    return this.api.post<MessageResponse>('/api/auth/forgot-password', requestData);
-  }
 }
