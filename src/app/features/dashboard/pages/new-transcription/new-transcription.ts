@@ -6,6 +6,7 @@ import { LANGUAGES, OPERATING_POINTS } from '../../../../core/integrations/speec
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { OperatingPoint, CreateJobConfig } from '../../../../core/integrations/speechmatics/types';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
+import { Auth } from '../../../../core/services/auth/auth';
 
 @Component({
   selector: 'app-new-transcription',
@@ -21,6 +22,7 @@ export class NewTranscription {
 
   private navigation = new NavigationService();
   private transcriptions = inject(Transcriptions);
+  private auth = inject(Auth);
 
   selectedLanguage: string = 'es';
   selectedOperatingPoint: OperatingPoint = 'standard';
@@ -114,7 +116,8 @@ export class NewTranscription {
           operating_point: this.selectedOperatingPoint,
         },
       };
-      await this.transcriptions.createJob(this.selectedFile, config);
+      const userId = this.auth.user()?.id || '';
+      await this.transcriptions.createJob(userId, config, this.selectedFile);
       this.navigation.navigate('/dashboard/transcriptions');
     } catch (e: unknown) {
       const msg = (e as { message?: string })?.message || 'No se pudo crear el job.';
