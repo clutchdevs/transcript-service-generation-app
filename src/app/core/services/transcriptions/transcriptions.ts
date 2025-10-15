@@ -58,10 +58,11 @@ export class Transcriptions {
    * Sends multipart/form-data: { file, config(JSON) }
    * Do NOT set Content-Type manually; the browser will set the proper boundary.
    */
-  async createJob(file: File, config: CreateJobConfig): Promise<any> {
+  async createJob(userId: string, config: CreateJobConfig, file: File): Promise<any> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('userId', userId);
     formData.append('config', JSON.stringify(config));
+    formData.append('audioFile', file, file.name);
 
     const endpoint = '/api/transcription/create-job';
     const response = await firstValueFrom(this.api.post<any>(endpoint, formData));
