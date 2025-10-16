@@ -15,7 +15,7 @@
       Nueva transcripción
     </app-button>
   </div>
-  </div>
+</div>
 
 <!-- Search and Filters -->
 <div class="mb-6">
@@ -31,21 +31,31 @@
           type="text"
           placeholder="Buscar transcripciones..."
           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          [value]="searchTerm()"
+          (input)="onSearchChange($event)"
         >
       </div>
     </div>
     <div class="flex gap-2">
-      <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-        <option>Todos los estados</option>
-        <option>Completado</option>
-        <option>Procesando</option>
-        <option>Error</option>
+      <select
+        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        [value]="statusFilter()"
+        (change)="onStatusFilterChange($event)"
+      >
+        <option value="all">Todos los estados</option>
+        <option value="completado">Completado</option>
+        <option value="procesando">Procesando</option>
+        <option value="error">Error</option>
       </select>
-      <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-        <option>Todos los idiomas</option>
-        <option>Español</option>
-        <option>Inglés</option>
-        <option>Francés</option>
+      <select
+        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        [value]="languageFilter()"
+        (change)="onLanguageFilterChange($event)"
+      >
+        <option value="all">Todos los idiomas</option>
+        <option value="es">Español</option>
+        <option value="en">Inglés</option>
+        <option value="fr">Francés</option>
       </select>
     </div>
   </div>
@@ -53,14 +63,37 @@
 
 <!-- Loading / Error / Empty States -->
 @if (isLoading()) {
-  <div class="bg-white shadow sm:rounded-md p-6 text-gray-600">Cargando transcripciones...</div>
+  <div class="bg-white shadow sm:rounded-md p-6 text-center">
+    <div class="flex items-center justify-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span class="ml-3 text-gray-600">Cargando transcripciones...</span>
+    </div>
+  </div>
 } @else if (error()) {
-  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">{{ error() }}</div>
-} @else if (!jobs().length) {
-  <div class="bg-white shadow sm:rounded-md p-6 text-gray-600">No hay transcripciones todavía.</div>
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+    <div class="flex">
+      <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+      </svg>
+      {{ error() }}
+    </div>
+  </div>
+} @else if (!filteredJobs().length) {
+  <div class="bg-white shadow sm:rounded-md p-6 text-center text-gray-600">
+    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    <p class="text-lg font-medium mb-2">No hay transcripciones</p>
+    <p class="text-sm">@if (searchTerm() || statusFilter() !== 'all' || languageFilter() !== 'all') {
+      No se encontraron transcripciones con los filtros aplicados.
+    } @else {
+      Aún no has creado ninguna transcripción. ¡Crea tu primera transcripción!
+    }</p>
+  </div>
 } @else {
   <!-- Transcriptions Table -->
-  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+<div class="bg-white shadow overflow-hidden sm:rounded-md">
+  <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
     <table class="min-w-full divide-y divide-gray-200">
     <thead class="bg-gray-50">
       <tr>
@@ -82,20 +115,33 @@
       </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
-      @for (job of jobs(); track job.id) {
+      @for (job of filteredJobs(); track job.id) {
         <tr class="hover:bg-gray-50">
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex items-center">
               <div class="flex-shrink-0 h-10 w-10">
-                <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13" />
+                <div class="h-10 w-10 rounded-lg flex items-center justify-center"
+                     [class.bg-blue-100]="job.statusId === 2"
+                     [class.bg-yellow-100]="job.statusId === 1"
+                     [class.bg-red-100]="job.statusId === 4">
+                  <svg class="h-5 w-5"
+                       [class.text-blue-600]="job.statusId === 2"
+                       [class.text-yellow-600]="job.statusId === 1"
+                       [class.text-red-600]="job.statusId === 4"
+                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    @if (job.statusId === 2) {
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                    } @else if (job.statusId === 1) {
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    } @else {
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    }
                   </svg>
                 </div>
               </div>
               <div class="ml-4">
-                <div class="text-sm font-medium text-gray-900">{{ job.fileName || job.id }}</div>
-                <div class="text-sm text-gray-500">{{ job.languageFrom || '-' }} @if (job.languageTo) { → {{ job.languageTo }} }</div>
+                <div class="text-sm font-medium text-gray-900">{{ job.title }}</div>
+                <div class="text-sm text-gray-500">{{ formatFileSize(job.fileSize) }} • {{ formatDuration(job.durationSeconds) }}</div>
               </div>
             </div>
           </td>
@@ -104,23 +150,36 @@
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                  [class.bg-green-100]="job.status === 'completed'"
-                  [class.text-green-800]="job.status === 'completed'"
-                  [class.bg-yellow-100]="job.status === 'processing'"
-                  [class.text-yellow-800]="job.status === 'processing'"
-                  [class.bg-red-100]="job.status === 'error'"
-                  [class.text-red-800]="job.status === 'error'">
-              {{ job.status }}
+                  [class.bg-green-100]="job.statusId === 2"
+                  [class.text-green-800]="job.statusId === 2"
+                  [class.bg-yellow-100]="job.statusId === 1"
+                  [class.text-yellow-800]="job.statusId === 1"
+                  [class.bg-red-100]="job.statusId === 4"
+                  [class.text-red-800]="job.statusId === 4">
+              <svg class="w-2 h-2 mr-1" fill="currentColor" viewBox="0 0 8 8">
+                <circle cx="4" cy="4" r="3" />
+              </svg>
+              {{ getStatusName(job.statusId) }}
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-            {{ job.languageFrom || '-' }} @if (job.languageTo) { → {{ job.languageTo }} }
+            {{ getLanguageName(job.language) }}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
             <div class="flex space-x-2">
-              <button class="text-blue-600 hover:text-blue-900">Ver</button>
-              <button class="text-gray-600 hover:text-gray-900">Editar</button>
-              <button class="text-red-600 hover:text-red-900">Eliminar</button>
+              @if (job.statusId === 2) {
+                <button class="text-blue-600 hover:text-blue-900" (click)="viewJob(job)">Ver</button>
+                <button class="text-gray-600 hover:text-gray-900" (click)="editJob(job)">Editar</button>
+                <button class="text-red-600 hover:text-red-900" (click)="deleteJob(job)">Eliminar</button>
+              } @else if (job.statusId === 1) {
+                <button class="text-gray-400 cursor-not-allowed">Ver</button>
+                <button class="text-gray-400 cursor-not-allowed">Editar</button>
+                <button class="text-red-600 hover:text-red-900" (click)="cancelJob(job)">Cancelar</button>
+              } @else {
+                <button class="text-gray-400 cursor-not-allowed">Ver</button>
+                <button class="text-gray-400 cursor-not-allowed">Editar</button>
+                <button class="text-blue-600 hover:text-blue-900" (click)="retryJob(job)">Reintentar</button>
+              }
             </div>
           </td>
         </tr>
@@ -128,51 +187,54 @@
     </tbody>
     </table>
   </div>
+</div>
 }
 
 <!-- Pagination -->
-<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-md">
-  <div class="flex-1 flex justify-between sm:hidden">
-    <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-      Anterior
-    </button>
-    <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-      Siguiente
-    </button>
-  </div>
-  <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-    <div>
-      <p class="text-sm text-gray-700">
-        Mostrando <span class="font-medium">1</span> a <span class="font-medium">3</span> de <span class="font-medium">12</span> resultados
-      </p>
+@if (filteredJobs().length > 0) {
+  <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-md">
+    <div class="flex-1 flex justify-between sm:hidden">
+      <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+        Anterior
+      </button>
+      <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+        Siguiente
+      </button>
     </div>
-    <div>
-      <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-        <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-          <span class="sr-only">Anterior</span>
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-          </svg>
-        </button>
-        <button class="bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-          1
-        </button>
-        <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-          2
-        </button>
-        <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-          3
-        </button>
-        <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-          4
-        </button>
-        <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-          <span class="sr-only">Siguiente</span>
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </nav>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          Mostrando <span class="font-medium">1</span> a <span class="font-medium">{{ filteredJobs().length }}</span> de <span class="font-medium">{{ filteredJobs().length }}</span> resultados
+        </p>
+      </div>
+      <div>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+          <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <span class="sr-only">Anterior</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button class="bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+            1
+          </button>
+          <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+            2
+          </button>
+          <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+            3
+          </button>
+          <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+            4
+          </button>
+          <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <span class="sr-only">Siguiente</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </nav>
+      </div>
     </div>
   </div>
-</div>
+}
