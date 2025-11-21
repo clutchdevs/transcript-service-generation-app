@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
-import { Transcriptions as TranscriptionsService, TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions';
+import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
+import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
 

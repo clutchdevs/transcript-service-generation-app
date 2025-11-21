@@ -21,8 +21,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(Auth);
 
   // Shared refresh lock across requests
-  let refreshInFlight = (authInterceptor as any)._refreshInFlight as Promise<boolean> | null;
-  const setRefreshInFlight = (p: Promise<boolean> | null) => ((authInterceptor as any)._refreshInFlight = p);
+  type AuthInterceptorWithRefresh = HttpInterceptorFn & {
+    _refreshInFlight?: Promise<boolean> | null;
+  };
+  const interceptor = authInterceptor as AuthInterceptorWithRefresh;
+  let refreshInFlight = interceptor._refreshInFlight;
+  const setRefreshInFlight = (p: Promise<boolean> | null) => {
+    interceptor._refreshInFlight = p;
+  };
 
   // Attach Authorization header if token exists and header not already set
   const token = getTokenFromStorage();

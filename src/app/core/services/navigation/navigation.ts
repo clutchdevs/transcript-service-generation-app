@@ -81,7 +81,7 @@ export class NavigationService {
    * @param route - Route path
    * @param params - Query parameters
    */
-  navigate(route: string, params?: Record<string, any>): void {
+  navigate(route: string, params?: Record<string, unknown>): void {
     if (params) {
       this.router.navigate([route], { queryParams: params });
     } else {

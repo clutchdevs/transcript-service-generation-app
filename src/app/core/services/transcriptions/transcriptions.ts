@@ -4,93 +4,14 @@ import { firstValueFrom } from 'rxjs';
 import { Api, ApiResponse } from '../api/api';
 import { CreateJobConfig } from '../../integrations/speechmatics/types';
 import { LANGUAGES } from '../../integrations/speechmatics/constants';
-
-export interface TranscriptionJob {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  referenceId: string;
-  title: string;
-  originalFilename: string;
-  filePath: string;
-  fileSize: string;
-  durationSeconds: number;
-  language: string;
-  statusId: number;
-  transcriptionText: string | null;
-  confidenceScore: number | null;
-  wordCount: number | null;
-  processingStartedAt: string | null;
-  processingCompletedAt: string | null;
-  errorMessage: string | null;
-  metadata: any | null;
-  isDeleted: boolean;
-  deletedAt: string | null;
-}
-
-export interface TranscriptionStatus {
-  id: number;
-  name: string;
-  description: string;
-}
-
-export const TRANSCRIPTION_STATUSES: TranscriptionStatus[] = [
-  { id: 2, name: 'Pendiente', description: 'Transcripción pendiente' },
-  { id: 3, name: 'Completado', description: 'Transcripción completada' },
-  { id: 4, name: 'Error', description: 'Error en la transcripción' },
-];
-
-export interface ListParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  status?: string;
-}
-
-// Speechmatics transcript response interfaces
-export interface TranscriptAlternative {
-  confidence: number;
-  content: string;
-  language: string;
-  speaker: string;
-}
-
-export interface TranscriptResult {
-  alternatives: TranscriptAlternative[];
-  end_time: number;
-  start_time: number;
-  type: 'word' | 'punctuation';
-  attaches_to?: 'previous' | 'next';
-  is_eos?: boolean;
-}
-
-export interface TranscriptResponse {
-  format: string;
-  job: {
-    created_at: string;
-    data_name: string;
-    duration: number;
-    id: string;
-  };
-  metadata: {
-    created_at: string;
-    language_pack_info: {
-      adapted: boolean;
-      itn: boolean;
-      language_description: string;
-      word_delimiter: string;
-      writing_direction: string;
-    };
-    orchestrator_version: string;
-    transcription_config: {
-      language: string;
-      operating_point: string;
-    };
-    type: string;
-  };
-  results: TranscriptResult[];
-}
+import {
+  TranscriptionJob,
+  TranscriptionStatus,
+  TRANSCRIPTION_STATUSES,
+  ListParams,
+  CreateJobResponse,
+  TranscriptResponse,
+} from './transcriptions.types';
 
 // Endpoints
 const TRANSCRIPTION_ENDPOINTS = {
@@ -148,12 +69,13 @@ export class Transcriptions {
    * Create a new transcription job
    * Sends multipart/form-data: { file, config(JSON) }
    * Do NOT set Content-Type manually; the browser will set the proper boundary.
+   * @returns The created transcription job data
    */
   async createJob(
     userId: string,
     config: CreateJobConfig,
     file: File
-  ): Promise<any> {
+  ): Promise<CreateJobResponse> {
     const formData = new FormData();
     formData.append('userId', userId);
     formData.append('config', JSON.stringify(config));
@@ -161,12 +83,16 @@ export class Transcriptions {
 
     const endpoint = '/api/transcription/create-job';
     const response = await firstValueFrom(
-      this.api.post<any>(endpoint, formData)
+      this.api.post<CreateJobResponse>(endpoint, formData)
     );
 
     // Support both wrapped and raw responses
-    const data = (response as ApiResponse<any>).data;
-    return data !== undefined ? data : response;
+    const data = (response as ApiResponse<CreateJobResponse>).data;
+    if (data !== undefined) {
+      return data;
+    }
+    // If response is not wrapped, assume it's the job data directly
+    return response as unknown as CreateJobResponse;
   }
 
   /**
