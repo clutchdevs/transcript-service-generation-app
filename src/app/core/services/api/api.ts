@@ -27,8 +27,9 @@ export class Api {
    */
   get<T>(endpoint: string, params?: HttpParams, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.get<any>(url, { params, headers }).pipe(
-      map(response => this.transformResponse<T>(response))
+    return this.http.get<unknown>(url, { params, headers }).pipe(
+      map(response => this.transformResponse<T>(response)),
+      catchError(error => this.handleError(error))
     );
   }
 
@@ -38,9 +39,9 @@ export class Api {
    * @param body - Request body
    * @param headers - Custom headers
    */
-  post<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<ApiResponse<T>> {
+  post<T>(endpoint: string, body: unknown, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.post<any>(url, body, { headers }).pipe(
+    return this.http.post<unknown>(url, body, { headers }).pipe(
       map(response => this.transformResponse<T>(response)),
       catchError(error => this.handleError(error))
     );
@@ -52,9 +53,12 @@ export class Api {
    * @param body - Request body
    * @param headers - Custom headers
    */
-  put<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<ApiResponse<T>> {
+  put<T>(endpoint: string, body: unknown, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.put<ApiResponse<T>>(url, body, { headers });
+    return this.http.put<unknown>(url, body, { headers }).pipe(
+      map(response => this.transformResponse<T>(response)),
+      catchError(error => this.handleError(error))
+    );
   }
 
   /**
@@ -64,7 +68,10 @@ export class Api {
    */
   delete<T>(endpoint: string, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.delete<ApiResponse<T>>(url, { headers });
+    return this.http.delete<unknown>(url, { headers }).pipe(
+      map(response => this.transformResponse<T>(response)),
+      catchError(error => this.handleError(error))
+    );
   }
 
   /**
@@ -73,9 +80,12 @@ export class Api {
    * @param body - Request body
    * @param headers - Custom headers
    */
-  patch<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<ApiResponse<T>> {
+  patch<T>(endpoint: string, body: unknown, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.patch<ApiResponse<T>>(url, body, { headers });
+    return this.http.patch<unknown>(url, body, { headers }).pipe(
+      map(response => this.transformResponse<T>(response)),
+      catchError(error => this.handleError(error))
+    );
   }
 
   /**
@@ -93,30 +103,41 @@ export class Api {
    * Transform API response to standard format
    * @param response - Raw API response
    */
-  private transformResponse<T>(response: any): ApiResponse<T> {
-    // Handle different response formats
-    if (response.statusCode && response.statusCode >= 400) {
+  private transformResponse<T>(response: unknown): ApiResponse<T> {
+    // Type guard: Check if response is an object
+    if (typeof response !== 'object' || response === null) {
+      return {
+        success: true,
+        data: response as T,
+        message: undefined
+      };
+    }
+
+    const resp = response as Record<string, unknown>;
+
+    // Handle error responses with statusCode
+    if (typeof resp['statusCode'] === 'number' && resp['statusCode'] >= 400) {
       return {
         success: false,
-        error: response.message || 'An error occurred',
+        error: (typeof resp['message'] === 'string' ? resp['message'] : undefined) || 'An error occurred',
         data: undefined
       };
     }
 
-    // Handle successful responses
-    if (response.data) {
+    // Handle successful responses with data property
+    if ('data' in resp) {
       return {
         success: true,
-        data: response.data,
-        message: response.message
+        data: resp['data'] as T,
+        message: typeof resp['message'] === 'string' ? resp['message'] : undefined
       };
     }
 
-    // Handle direct data responses
+    // Handle direct data responses (arrays, objects, etc.)
     return {
       success: true,
-      data: response,
-      message: response.message
+      data: response as T,
+      message: typeof resp['message'] === 'string' ? resp['message'] : undefined
     };
   }
 
@@ -140,7 +161,8 @@ export class Api {
     }
 
     // Extract validation issues if present (e.g., ZodError format)
-    const issues = (error as any)?.error?.error?.issues || (error as any)?.error?.issues;
+    const errorBody = error.error as { error?: { issues?: unknown }; issues?: unknown } | null;
+    const issues = errorBody?.error?.issues || errorBody?.issues;
 
     // Throw a structured error object so callers can handle field-level issues
     return throwError(() => ({
