@@ -123,7 +123,7 @@ export class Transcriptions implements OnInit {
 
   async viewJob(job: TranscriptionJob): Promise<void> {
     console.log('View job:', job);
-    
+
     try {
       console.log('Fetching transcript for job:', job.referenceId);
       const transcript = await this.transcriptionsService.getJobTranscript(job.referenceId);

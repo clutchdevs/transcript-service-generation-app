@@ -43,8 +43,8 @@
         (change)="onStatusFilterChange($event)"
       >
         <option value="all">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
         <option value="completado">Completado</option>
-        <option value="procesando">Procesando</option>
         <option value="error">Error</option>
       </select>
       <select
@@ -93,22 +93,23 @@
 } @else {
   <!-- Transcriptions Table -->
   <div class="bg-white shadow overflow-hidden sm:rounded-md">
-    <table class="min-w-full divide-y divide-gray-200">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Archivo
           </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
             Fecha
           </th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Estado
           </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
             Idioma
           </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
             Tamaño
           </th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -134,24 +135,24 @@
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
               {{ job.createdAt | date : 'dd/MM/yyyy HH:mm' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    [class.bg-green-100]="job.statusId === 2"
-                    [class.text-green-800]="job.statusId === 2"
-                    [class.bg-yellow-100]="job.statusId === 1"
-                    [class.text-yellow-800]="job.statusId === 1"
+                    [class.bg-yellow-100]="job.statusId === 2"
+                    [class.text-yellow-800]="job.statusId === 2"
+                    [class.bg-green-100]="job.statusId === 3"
+                    [class.text-green-800]="job.statusId === 3"
                     [class.bg-red-100]="job.statusId === 4"
                     [class.text-red-800]="job.statusId === 4">
                 {{ getStatusName(job.statusId) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
               {{ getLanguageName(job.language) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
               {{ formatFileSize(job.fileSize) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -174,6 +175,7 @@
         }
       </tbody>
     </table>
+    </div>
   </div>
 }
 

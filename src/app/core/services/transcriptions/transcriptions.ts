@@ -36,8 +36,8 @@ export interface TranscriptionStatus {
 }
 
 export const TRANSCRIPTION_STATUSES: TranscriptionStatus[] = [
-  { id: 1, name: 'Procesando', description: 'Transcripción en proceso' },
-  { id: 2, name: 'Completado', description: 'Transcripción finalizada' },
+  { id: 2, name: 'Pendiente', description: 'Transcripción pendiente' },
+  { id: 3, name: 'Completado', description: 'Transcripción completada' },
   { id: 4, name: 'Error', description: 'Error en la transcripción' },
 ];
 
