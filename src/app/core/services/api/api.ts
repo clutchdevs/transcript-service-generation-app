@@ -27,7 +27,9 @@ export class Api {
    */
   get<T>(endpoint: string, params?: HttpParams, headers?: HttpHeaders): Observable<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    return this.http.get<ApiResponse<T>>(url, { params, headers });
+    return this.http.get<any>(url, { params, headers }).pipe(
+      map(response => this.transformResponse<T>(response))
+    );
   }
 
   /**

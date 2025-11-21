@@ -1,11 +1,12 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Auth } from '../../services/auth/auth';
+import { STORAGE_KEYS } from '../../constants/storage';
 import { from, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 function getTokenFromStorage(): string | null {
-  return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
+  return sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 }
 
 function isAuthEndpoint(url: string): boolean {

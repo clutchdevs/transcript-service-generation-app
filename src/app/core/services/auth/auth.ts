@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Observable, from, firstValueFrom } from 'rxjs';
 import { Api, ApiResponse } from '../api/api';
+import { STORAGE_KEYS } from '../../constants/storage';
 
 // Interfaces for authentication
 export interface LoginRequest {
@@ -404,8 +405,8 @@ export class Auth {
    */
   private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = false): void {
     const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem('auth_token', accessToken);
-    storage.setItem('refresh_token', refreshToken);
+    storage.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
+    storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
   }
 
   /**
@@ -413,7 +414,7 @@ export class Auth {
    */
   private getToken(): string | null {
     // First check sessionStorage, then localStorage
-    return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
+    return sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   /**
@@ -421,17 +422,17 @@ export class Auth {
    */
   private getRefreshToken(): string | null {
     // First check sessionStorage, then localStorage
-    return sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token');
+    return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   /**
    * Remove authentication tokens from both storage types
    */
   private removeToken(): void {
-    sessionStorage.removeItem('auth_token');
-    sessionStorage.removeItem('refresh_token');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
 }
