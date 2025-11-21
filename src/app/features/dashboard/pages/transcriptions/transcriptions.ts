@@ -121,9 +121,16 @@ export class Transcriptions implements OnInit {
     this.navigation.navigate(ROUTES.DASHBOARD.ROOT + '/new');
   }
 
-  viewJob(job: TranscriptionJob): void {
+  async viewJob(job: TranscriptionJob): Promise<void> {
     console.log('View job:', job);
-    // TODO: Implementar vista de transcripción
+    
+    try {
+      console.log('Fetching transcript for job:', job.referenceId);
+      const transcript = await this.transcriptionsService.getJobTranscript(job.referenceId);
+      console.log('Transcript response:', transcript);
+    } catch (error) {
+      console.error('Error fetching transcript:', error);
+    }
   }
 
   editJob(job: TranscriptionJob): void {

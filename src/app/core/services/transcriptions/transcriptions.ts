@@ -36,8 +36,9 @@ export interface TranscriptionStatus {
 }
 
 export const TRANSCRIPTION_STATUSES: TranscriptionStatus[] = [
+  { id: 1, name: 'Procesando', description: 'Transcripción en proceso' },
   { id: 2, name: 'Completado', description: 'Transcripción finalizada' },
-  // Agregar más estados cuando los conozcamos
+  { id: 4, name: 'Error', description: 'Error en la transcripción' },
 ];
 
 export interface ListParams {
@@ -47,10 +48,56 @@ export interface ListParams {
   status?: string;
 }
 
+// Speechmatics transcript response interfaces
+export interface TranscriptAlternative {
+  confidence: number;
+  content: string;
+  language: string;
+  speaker: string;
+}
+
+export interface TranscriptResult {
+  alternatives: TranscriptAlternative[];
+  end_time: number;
+  start_time: number;
+  type: 'word' | 'punctuation';
+  attaches_to?: 'previous' | 'next';
+  is_eos?: boolean;
+}
+
+export interface TranscriptResponse {
+  format: string;
+  job: {
+    created_at: string;
+    data_name: string;
+    duration: number;
+    id: string;
+  };
+  metadata: {
+    created_at: string;
+    language_pack_info: {
+      adapted: boolean;
+      itn: boolean;
+      language_description: string;
+      word_delimiter: string;
+      writing_direction: string;
+    };
+    orchestrator_version: string;
+    transcription_config: {
+      language: string;
+      operating_point: string;
+    };
+    type: string;
+  };
+  results: TranscriptResult[];
+}
+
 // Endpoints
 const TRANSCRIPTION_ENDPOINTS = {
   USER_JOBS: (userId: string) =>
     `/api/transcription/${encodeURIComponent(userId)}/jobs`,
+  JOB_TRANSCRIPT: (jobId: string) =>
+    `/api/transcription/jobs/${encodeURIComponent(jobId)}/transcript`,
 } as const;
 
 @Injectable({
@@ -120,6 +167,52 @@ export class Transcriptions {
     // Support both wrapped and raw responses
     const data = (response as ApiResponse<any>).data;
     return data !== undefined ? data : response;
+  }
+
+  /**
+   * Get transcript for a specific job
+   * @param jobId - The referenceId of the job
+   * @returns The transcript text extracted from Speechmatics format
+   */
+  async getJobTranscript(jobId: string): Promise<string> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB_TRANSCRIPT(jobId);
+    const response = await firstValueFrom(
+      this.api.get<TranscriptResponse>(endpoint)
+    );
+
+    // Check if response is wrapped in ApiResponse
+    let data: TranscriptResponse;
+    if ('data' in response && response.data) {
+      data = response.data as TranscriptResponse;
+    } else {
+      data = response as unknown as TranscriptResponse;
+    }
+
+    // Extract text from results array
+    if (!data?.results || !Array.isArray(data.results)) {
+      return '';
+    }
+
+    // Build transcript text from results
+    let transcript = '';
+    for (const result of data.results) {
+      if (result.alternatives && result.alternatives.length > 0) {
+        const content = result.alternatives[0].content;
+
+        // Handle punctuation that attaches to previous word (no space before)
+        if (result.type === 'punctuation' && result.attaches_to === 'previous') {
+          transcript += content;
+        } else {
+          // Add space before word/punctuation if transcript is not empty
+          if (transcript.length > 0 && !transcript.endsWith(' ')) {
+            transcript += ' ';
+          }
+          transcript += content;
+        }
+      }
+    }
+
+    return transcript.trim();
   }
 
   /**
