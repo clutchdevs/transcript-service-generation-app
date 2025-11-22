@@ -3,14 +3,14 @@
     <!-- User Image -->
     <img
       [src]="imageUrl"
-      [alt]="userDisplayName()"
+      [alt]="userDisplayName"
       [class]="avatarClasses"
       class="object-cover"
     />
   } @else {
     <!-- Fallback with Initials -->
     <div [class]="avatarClasses">
-      <span [class]="textClasses">{{ userInitials() }}</span>
+      <span [class]="textClasses">{{ userInitials }}</span>
     </div>
   }
 

@@ -29,6 +29,7 @@ export class InputComponent implements ControlValueAccessor {
   @AngularInput() icon?: string;
   @AngularInput() iconPosition: 'left' | 'right' = 'left';
   @AngularInput() showPasswordToggle = false;
+  @AngularInput() autocomplete?: string;
 
   value = signal('');
   showPassword = signal(false);
@@ -42,11 +43,11 @@ export class InputComponent implements ControlValueAccessor {
     this.value.set(value || '');
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: (value: string) => void): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {
+  registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
   }
 
@@ -67,6 +68,12 @@ export class InputComponent implements ControlValueAccessor {
 
   togglePasswordVisibility(): void {
     this.showPassword.set(!this.showPassword());
+  }
+
+  onTogglePassword(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.togglePasswordVisibility();
   }
 
   get inputClasses(): string {
@@ -91,5 +98,30 @@ export class InputComponent implements ControlValueAccessor {
       return 'text';
     }
     return this.type;
+  }
+
+  get autocompleteValue(): string {
+    // If autocomplete is explicitly provided, use it
+    if (this.autocomplete) {
+      return this.autocomplete;
+    }
+
+    // Auto-generate based on input type
+    switch (this.type) {
+      case 'password':
+        // Default to 'current-password' for password fields
+        // Can be overridden by passing autocomplete="new-password" for registration
+        return 'current-password';
+      case 'email':
+        return 'email';
+      case 'tel':
+        return 'tel';
+      case 'url':
+        return 'url';
+      case 'search':
+        return 'search';
+      default:
+        return 'off'; // Disable autocomplete for generic text inputs
+    }
   }
 }

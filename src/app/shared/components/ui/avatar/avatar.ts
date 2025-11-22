@@ -1,5 +1,13 @@
-import { Component, Input, computed } from '@angular/core';
-import { User } from '../../../../core/services/auth/auth';
+import { Component, Input } from '@angular/core';
+
+/**
+ * Minimal user data interface for Avatar component.
+ * Keeps the component decoupled from domain models.
+ */
+export interface AvatarUser {
+  name?: string;
+  email?: string;
+}
 
 @Component({
   selector: 'app-avatar',
@@ -9,7 +17,7 @@ import { User } from '../../../../core/services/auth/auth';
   styleUrl: './avatar.scss'
 })
 export class Avatar {
-  @Input() user: User | null = null;
+  @Input() user: AvatarUser | null = null;
   @Input() size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Input() showStatus: boolean = false;
   @Input() imageUrl?: string;
@@ -44,19 +52,18 @@ export class Avatar {
     return `absolute bottom-0 right-0 bg-green-400 border-2 border-white rounded-full ${sizeClasses[this.size]}`;
   }
 
-  readonly userDisplayName = computed(() => {
-    const user = this.user;
-    if (!user) return 'U';
-    return user.name || user.email?.split('@')[0] || 'U';
-  });
+  get userDisplayName(): string {
+    if (!this.user) return 'U';
+    return this.user.name || this.user.email?.split('@')[0] || 'U';
+  }
 
-  readonly userInitials = computed(() => {
-    const name = this.userDisplayName();
+  get userInitials(): string {
+    const name = this.userDisplayName;
     return name
       .split(' ')
       .map(word => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  });
+  }
 }

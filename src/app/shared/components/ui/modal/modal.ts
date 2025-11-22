@@ -23,7 +23,8 @@ export class Modal {
   @Output() confirmed = new EventEmitter<void>();
 
   // A11y
-  readonly modalTitleId = `modal-title-${Date.now()}`;
+  private static idCounter = 0;
+  readonly modalTitleId = `modal-title-${Modal.idCounter++}`;
 
   onOverlayClick(): void {
     if (!this.dismissible) return;
@@ -50,9 +51,10 @@ export class Modal {
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  onEsc(event: any): void {
+  onEsc(event: Event): void {
     if (!this.open || !this.dismissible) return;
-    event.preventDefault();
+    const keyboardEvent = event as KeyboardEvent;
+    keyboardEvent.preventDefault();
     this.onClose();
   }
 }
