@@ -66,4 +66,10 @@ export class Avatar {
       .toUpperCase()
       .slice(0, 2);
   }
+
+  get imageAlt(): string {
+    if (!this.user) return 'Avatar de usuario';
+    const name = this.userDisplayName;
+    return `Avatar de ${name}`;
+  }
 }

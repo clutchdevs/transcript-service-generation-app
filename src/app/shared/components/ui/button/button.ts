@@ -19,6 +19,7 @@ export class Button {
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() icon?: string;
   @Input() iconPosition: 'left' | 'right' = 'left';
+  @Input() ariaLabel?: string; // For icon-only buttons
 
   @Output() clicked = new EventEmitter<void>();
 

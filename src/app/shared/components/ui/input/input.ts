@@ -35,6 +35,11 @@ export class InputComponent implements ControlValueAccessor {
   showPassword = signal(false);
   touched = signal(false);
 
+  // Accessibility: Unique IDs for label and error message
+  private static idCounter = 0;
+  readonly inputId = `input-${InputComponent.idCounter++}`;
+  readonly errorId = `input-error-${this.inputId}`;
+
   // ControlValueAccessor implementation
   onChange = (value: string) => {};
   onTouched = () => {};
@@ -123,5 +128,15 @@ export class InputComponent implements ControlValueAccessor {
       default:
         return 'off'; // Disable autocomplete for generic text inputs
     }
+  }
+
+  // Accessibility: Check if input has error
+  get hasError(): boolean {
+    return this.touched() && !!this.error;
+  }
+
+  // Accessibility: Get aria-describedby value
+  get ariaDescribedBy(): string | null {
+    return this.hasError ? this.errorId : null;
   }
 }
