@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { NewTranscription } from './new-transcription';
 
@@ -8,7 +10,11 @@ describe('NewTranscription', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NewTranscription]
+      imports: [NewTranscription],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
     })
     .compileComponents();
 

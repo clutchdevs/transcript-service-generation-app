@@ -6,13 +6,17 @@ import { authGuard } from './auth.guard';
 import { Auth } from '../../services/auth/auth';
 
 describe('authGuard', () => {
-  const executeGuard: CanActivateFn = (...guardParameters) => 
+  const executeGuard: CanActivateFn = (...guardParameters) =>
       TestBed.runInInjectionContext(() => authGuard(...guardParameters));
 
-  let authService: jasmine.SpyObj<Auth>;
+  let authService: jest.Mocked<Auth>;
 
   beforeEach(() => {
-    const authSpy = jasmine.createSpyObj('Auth', ['isAuthenticated', 'ensureProfile']);
+    const isAuthenticatedFn = jest.fn(() => false);
+    const authSpy = {
+      isAuthenticated: isAuthenticatedFn as unknown as () => boolean,
+      ensureProfile: jest.fn()
+    } as unknown as jest.Mocked<Auth>;
 
     TestBed.configureTestingModule({
       imports: [RouterTestingModule],
@@ -21,7 +25,7 @@ describe('authGuard', () => {
       ]
     });
 
-    authService = TestBed.inject(Auth) as jasmine.SpyObj<Auth>;
+    authService = TestBed.inject(Auth) as jest.Mocked<Auth>;
   });
 
   it('should be created', () => {
@@ -29,15 +33,15 @@ describe('authGuard', () => {
   });
 
   it('should allow access when user is authenticated', () => {
-    authService.isAuthenticated.and.returnValue(true);
-    const result = executeGuard();
+    (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(true);
+    const result = executeGuard({} as any, {} as any);
     expect(result).toBe(true);
     expect(authService.ensureProfile).toHaveBeenCalled();
   });
 
   it('should deny access when user is not authenticated', () => {
-    authService.isAuthenticated.and.returnValue(false);
-    const result = executeGuard();
+    (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(false);
+    const result = executeGuard({} as any, {} as any);
     expect(result).toBe(false);
     expect(authService.ensureProfile).not.toHaveBeenCalled();
   });

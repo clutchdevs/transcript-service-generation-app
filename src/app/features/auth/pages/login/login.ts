@@ -37,10 +37,15 @@ export class Login implements OnDestroy {
   private formValid = signal(false);
   readonly isFormValid = computed(() => this.formValid());
 
+  // Signals to track form control status for reactivity
+  private emailTouched = signal(false);
+  private passwordTouched = signal(false);
+
   // Error messages - computed only when needed
   readonly emailError = computed(() => {
     const emailControl = this.loginForm?.get('email');
-    if (emailControl?.touched && emailControl?.errors) {
+    // Check the signal to make this reactive
+    if (this.emailTouched() && emailControl?.errors) {
       if (emailControl.errors['required']) return 'El email es requerido';
       if (emailControl.errors['email']) return 'Ingresa un email válido';
     }
@@ -49,7 +54,8 @@ export class Login implements OnDestroy {
 
   readonly passwordError = computed(() => {
     const passwordControl = this.loginForm?.get('password');
-    if (passwordControl?.touched && passwordControl?.errors) {
+    // Check the signal to make this reactive
+    if (this.passwordTouched() && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
       if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
@@ -79,6 +85,20 @@ export class Login implements OnDestroy {
       .subscribe(() => {
         // Update form validity signal
         this.formValid.set(this.loginForm.valid);
+      });
+
+    // Subscribe to email control status changes
+    this.loginForm.get('email')?.statusChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.emailTouched.set(this.loginForm.get('email')?.touched || false);
+      });
+
+    // Subscribe to password control status changes
+    this.loginForm.get('password')?.statusChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.passwordTouched.set(this.loginForm.get('password')?.touched || false);
       });
 
     // Initial form validity check

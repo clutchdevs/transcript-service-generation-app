@@ -20,6 +20,7 @@ export class ForgotPassword implements OnDestroy {
   forgotForm: FormGroup;
   private formValid = signal(false);
   private isSent = signal(false);
+  private emailTouchedSignal = signal(false);
 
   // Computed signals from Auth service
   readonly isLoading = computed(() => this.auth.isLoading());
@@ -30,7 +31,8 @@ export class ForgotPassword implements OnDestroy {
   // Computed signals for validation errors
   readonly emailError = computed(() => {
     const emailControl = this.forgotForm.get('email');
-    if (emailControl?.touched && emailControl?.errors) {
+    // Check the signal to make this reactive
+    if (this.emailTouchedSignal() && emailControl?.errors) {
       if (emailControl.errors['required']) return 'El email es requerido';
       if (emailControl.errors['email']) return 'Ingresa un email válido';
     }
@@ -50,6 +52,13 @@ export class ForgotPassword implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.formValid.set(this.forgotForm.valid);
+      });
+
+    // Subscribe to email control status changes
+    this.forgotForm.get('email')?.statusChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.emailTouchedSignal.set(this.forgotForm.get('email')?.touched || false);
       });
 
     this.formValid.set(this.forgotForm.valid);
