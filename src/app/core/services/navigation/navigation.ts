@@ -12,7 +12,8 @@ export const ROUTES = {
   DASHBOARD: {
     ROOT: '/dashboard',
     PROFILE: '/dashboard/profile',
-    TRANSCRIPTIONS: '/dashboard/transcriptions'
+    TRANSCRIPTIONS: '/dashboard/transcriptions',
+    TRANSCRIPTION_DETAIL: (id: string) => `/dashboard/transcriptions/${id}`
   },
   HOME: '/',
   PROFILE: '/profile'

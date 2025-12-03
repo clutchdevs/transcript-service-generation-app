@@ -14,6 +14,11 @@ export const dashboardRoutes: Routes = [
           import('./pages/transcriptions/transcriptions').then(m => m.Transcriptions),
       },
       {
+        path: 'transcriptions/:id',
+        loadComponent: () =>
+          import('./pages/transcription-detail/transcription-detail').then(m => m.TranscriptionDetail),
+      },
+      {
         path: 'new',
         loadComponent: () => import('./pages/new-transcription/new-transcription').then((m) => m.NewTranscription),
       }
