@@ -156,5 +156,82 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       window.URL.revokeObjectURL(url);
     }
   }
+
+  /**
+   * Refresh job status and reload data
+   */
+  async refreshJob(): Promise<void> {
+    const job = this.job();
+    if (job) {
+      await this.loadJob(job.id);
+    }
+  }
+
+  /**
+   * Cancel a pending transcription job
+   */
+  cancelJob(): void {
+    const job = this.job();
+    if (job) {
+      // TODO: Implementar cancelación de transcripción
+      console.log('Cancel job:', job);
+      // Mostrar confirmación antes de cancelar
+      if (confirm('¿Estás seguro de que deseas cancelar esta transcripción?')) {
+        // Llamar al endpoint de cancelación cuando esté disponible
+        // await this.transcriptionsService.cancelJob(job.id);
+      }
+    }
+  }
+
+  /**
+   * Retry a failed transcription job
+   */
+  retryJob(): void {
+    const job = this.job();
+    if (job) {
+      // TODO: Implementar reintento de transcripción
+      console.log('Retry job:', job);
+      // Mostrar confirmación antes de reintentar
+      if (confirm('¿Deseas reintentar esta transcripción?')) {
+        // Llamar al endpoint de reintento cuando esté disponible
+        // await this.transcriptionsService.retryJob(job.id);
+      }
+    }
+  }
+
+  /**
+   * Edit transcription title
+   */
+  editTitle(): void {
+    const job = this.job();
+    if (job) {
+      // TODO: Implementar edición de título
+      const newTitle = prompt('Nuevo título:', job.title);
+      if (newTitle && newTitle.trim() && newTitle !== job.title) {
+        console.log('Update title:', newTitle);
+        // Llamar al endpoint de actualización cuando esté disponible
+        // await this.transcriptionsService.updateJobTitle(job.id, newTitle.trim());
+        // Recargar el job después de actualizar
+        // await this.loadJob(job.id);
+      }
+    }
+  }
+
+  /**
+   * Delete transcription job
+   */
+  deleteJob(): void {
+    const job = this.job();
+    if (job) {
+      // TODO: Implementar eliminación de transcripción
+      if (confirm('¿Estás seguro de que deseas eliminar esta transcripción? Esta acción no se puede deshacer.')) {
+        console.log('Delete job:', job);
+        // Llamar al endpoint de eliminación cuando esté disponible
+        // await this.transcriptionsService.deleteJob(job.id);
+        // Redirigir al listado después de eliminar
+        // this.goBack();
+      }
+    }
+  }
 }
 

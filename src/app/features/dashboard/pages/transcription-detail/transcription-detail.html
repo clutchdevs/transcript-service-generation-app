@@ -11,10 +11,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
       </button>
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900">Detalles de transcripción</h2>
-        <p class="text-gray-600">Información completa de la transcripción</p>
-      </div>
+      <span class="text-gray-600">Volver al listado</span>
     </div>
   </div>
 
@@ -43,14 +40,18 @@
   <!-- Job Details -->
   @else if (job()) {
     @let currentJob = job()!;
-    
+
+    <!-- Title -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">{{ currentJob.title }}</h2>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Transcript Section -->
         <div class="bg-white shadow rounded-lg p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Transcripción</h3>
             @if (hasTranscript()) {
               <div class="flex gap-2">
                 <button
@@ -116,6 +117,59 @@
 
       <!-- Sidebar -->
       <div class="space-y-6">
+        <!-- Actions -->
+        <div class="bg-white shadow rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
+          <div class="space-y-2">
+            @if (isPending()) {
+              <app-button
+                variant="secondary"
+                size="md"
+                class="w-full"
+                (clicked)="refreshJob()"
+              >
+                Actualizar estado
+              </app-button>
+              <app-button
+                variant="ghost"
+                size="md"
+                class="w-full text-red-600 hover:text-red-700"
+                (clicked)="cancelJob()"
+              >
+                Cancelar
+              </app-button>
+            }
+            @if (hasError()) {
+              <app-button
+                variant="primary"
+                size="md"
+                class="w-full"
+                (clicked)="retryJob()"
+              >
+                Reintentar
+              </app-button>
+            }
+            @if (isCompleted()) {
+              <app-button
+                variant="secondary"
+                size="md"
+                class="w-full"
+                (clicked)="editTitle()"
+              >
+                Editar título
+              </app-button>
+            }
+            <app-button
+              variant="ghost"
+              size="md"
+              class="w-full text-red-600 hover:text-red-700"
+              (clicked)="deleteJob()"
+            >
+              Eliminar
+            </app-button>
+          </div>
+        </div>
+
         <!-- Job Information -->
         <div class="bg-white shadow rounded-lg p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Información</h3>
@@ -166,13 +220,6 @@
                 <dd class="mt-1 text-sm text-gray-900">{{ (currentJob.confidenceScore * 100).toFixed(1) }}%</dd>
               </div>
             }
-          </dl>
-        </div>
-
-        <!-- Timestamps -->
-        <div class="bg-white shadow rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Fechas</h3>
-          <dl class="space-y-4">
             <div>
               <dt class="text-sm font-medium text-gray-500">Creado</dt>
               <dd class="mt-1 text-sm text-gray-900">{{ currentJob.createdAt | date : 'dd/MM/yyyy HH:mm' }}</dd>
@@ -194,33 +241,6 @@
               </div>
             }
           </dl>
-        </div>
-
-        <!-- Actions -->
-        <div class="bg-white shadow rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
-          <div class="space-y-2">
-            @if (isPending()) {
-              <app-button
-                variant="secondary"
-                size="md"
-                class="w-full"
-                (clicked)="loadTranscript(currentJob.referenceId)"
-              >
-                Actualizar estado
-              </app-button>
-            }
-            @if (hasError()) {
-              <app-button
-                variant="primary"
-                size="md"
-                class="w-full"
-                (clicked)="loadJob(currentJob.id)"
-              >
-                Reintentar
-              </app-button>
-            }
-          </div>
         </div>
       </div>
     </div>
