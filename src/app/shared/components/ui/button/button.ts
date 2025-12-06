@@ -20,6 +20,7 @@ export class Button {
   @Input() icon?: string;
   @Input() iconPosition: 'left' | 'right' = 'left';
   @Input() ariaLabel?: string; // For icon-only buttons
+  @Input() customClasses?: string; // For additional custom classes
 
   @Output() clicked = new EventEmitter<void>();
 
@@ -47,7 +48,8 @@ export class Button {
     };
 
     const widthClass = this.fullWidth ? 'w-full' : '';
+    const customClass = this.customClasses || '';
 
-    return `${baseClasses} ${sizeClasses[this.size]} ${variantClasses[this.variant]} ${widthClass}`;
+    return `${baseClasses} ${sizeClasses[this.size]} ${variantClasses[this.variant]} ${widthClass} ${customClass}`;
   }
 }
