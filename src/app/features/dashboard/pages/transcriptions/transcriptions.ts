@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
+import { InputComponent } from '../../../../shared/components/ui/input/input';
 import { SelectComponent, SelectOption } from '../../../../shared/components/ui/select/select';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
@@ -10,7 +11,7 @@ import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants'
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button, SelectComponent],
+  imports: [CommonModule, Button, InputComponent, SelectComponent],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })
@@ -121,9 +122,8 @@ export class Transcriptions implements OnInit {
     }
   }
 
-  onSearchChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchTerm.set(target.value);
+  onSearchChange(value: string): void {
+    this.searchTerm.set(value);
   }
 
   onStatusFilterChange(value: string | number): void {

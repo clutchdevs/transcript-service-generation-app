@@ -1,4 +1,4 @@
-import { Component, Input as AngularInput, forwardRef, signal } from '@angular/core';
+import { Component, Input as AngularInput, Output, EventEmitter, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
@@ -31,7 +31,19 @@ export class InputComponent implements ControlValueAccessor {
   @AngularInput() showPasswordToggle = false;
   @AngularInput() autocomplete?: string;
 
-  value = signal('');
+  private _value: string = '';
+  @AngularInput()
+  set value(val: string) {
+    this._value = val;
+    this.valueSignal.set(val || '');
+  }
+  get value(): string {
+    return this._value;
+  }
+
+  @Output() valueChange = new EventEmitter<string>();
+
+  valueSignal = signal('');
   showPassword = signal(false);
   touched = signal(false);
 
@@ -45,7 +57,8 @@ export class InputComponent implements ControlValueAccessor {
   onTouched = () => {};
 
   writeValue(value: string): void {
-    this.value.set(value || '');
+    this.value = value || '';
+    this.valueSignal.set(value || '');
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -62,8 +75,10 @@ export class InputComponent implements ControlValueAccessor {
 
   onInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.value.set(value);
+    this.value = value;
+    this.valueSignal.set(value);
     this.onChange(value);
+    this.valueChange.emit(value);
   }
 
   onBlur(): void {
