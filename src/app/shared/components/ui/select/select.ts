@@ -94,8 +94,8 @@ export class SelectComponent implements ControlValueAccessor {
 
     const sizeClasses = {
       sm: 'pl-3 py-2 text-sm',
-      md: 'pl-3 py-2 text-sm',
-      lg: 'pl-4 py-3 text-base'
+      md: 'pl-3 py-3 text-sm',
+      lg: 'pl-4 py-4 text-base'
     };
 
     const stateClasses = this.touched() && this.error

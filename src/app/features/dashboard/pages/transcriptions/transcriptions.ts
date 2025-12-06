@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { InputComponent } from '../../../../shared/components/ui/input/input';
 import { SelectComponent, SelectOption } from '../../../../shared/components/ui/select/select';
+import { TranscriptionsTable } from './components/transcriptions-table/transcriptions-table';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { Auth } from '../../../../core/services/auth/auth';
@@ -11,7 +12,7 @@ import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants'
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button, InputComponent, SelectComponent],
+  imports: [CommonModule, Button, InputComponent, SelectComponent, TranscriptionsTable],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })
@@ -167,19 +168,4 @@ export class Transcriptions implements OnInit {
     this.loadJobs();
   }
 
-  formatFileSize(bytes: string): string {
-    return this.transcriptionsService.formatFileSize(bytes);
-  }
-
-  formatDuration(seconds: number): string {
-    return this.transcriptionsService.formatDuration(seconds);
-  }
-
-  getStatusName(statusId: number): string {
-    return this.transcriptionsService.getStatusName(statusId);
-  }
-
-  getLanguageName(languageCode: string): string {
-    return this.transcriptionsService.getLanguageName(languageCode);
-  }
 }
