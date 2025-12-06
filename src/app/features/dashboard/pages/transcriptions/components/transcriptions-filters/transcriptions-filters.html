@@ -1,0 +1,31 @@
+<!-- Search and Filters -->
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row gap-4">
+    <div class="flex-1">
+      <app-input
+        type="search"
+        placeholder="Buscar transcripciones..."
+        [value]="searchTerm"
+        icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        iconPosition="left"
+        size="sm"
+        (valueChange)="onSearchChange($event)"
+      ></app-input>
+    </div>
+    <div class="flex gap-2">
+      <app-select
+        [options]="statusOptions"
+        [value]="statusFilter"
+        size="sm"
+        (valueChange)="onStatusFilterChange($event)"
+      ></app-select>
+      <app-select
+        [options]="languageOptions"
+        [value]="languageFilter"
+        size="sm"
+        (valueChange)="onLanguageFilterChange($event)"
+      ></app-select>
+    </div>
+  </div>
+</div>
+

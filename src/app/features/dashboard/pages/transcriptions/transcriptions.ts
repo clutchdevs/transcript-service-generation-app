@@ -1,18 +1,18 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
-import { InputComponent } from '../../../../shared/components/ui/input/input';
-import { SelectComponent, SelectOption } from '../../../../shared/components/ui/select/select';
+import { TranscriptionsFilters } from './components/transcriptions-filters/transcriptions-filters';
 import { TranscriptionsTable } from './components/transcriptions-table/transcriptions-table';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
 import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants';
+import { SelectOption } from '../../../../shared/components/ui/select/select';
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button, InputComponent, SelectComponent, TranscriptionsTable],
+  imports: [CommonModule, Button, TranscriptionsFilters, TranscriptionsTable],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })
