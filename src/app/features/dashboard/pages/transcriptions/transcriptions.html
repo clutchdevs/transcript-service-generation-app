@@ -3,7 +3,9 @@
   <div class="flex justify-between items-center">
     <div>
       <h2 class="text-2xl font-bold text-gray-900">Mis transcripciones</h2>
-      <p class="text-gray-600">Gestiona y revisa todas tus transcripciones de audio</p>
+      <p class="text-gray-600">
+        Gestiona y revisa todas tus transcripciones de audio
+      </p>
     </div>
     <app-button
       variant="primary"
@@ -30,58 +32,112 @@
 
 <!-- Loading / Error / Empty States -->
 @if (isLoading()) {
-  <div class="bg-white shadow sm:rounded-md p-6 text-center">
-    <div class="flex items-center justify-center">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <span class="ml-3 text-gray-600">Cargando transcripciones...</span>
-    </div>
+<div class="bg-white shadow sm:rounded-md p-6 text-center">
+  <div class="flex items-center justify-center">
+    <div
+      class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+    ></div>
+    <span class="ml-3 text-gray-600">Cargando transcripciones...</span>
   </div>
+</div>
 } @else if (error()) {
-  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-    <div class="flex">
-      <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-      </svg>
-      {{ error() }}
-    </div>
-  </div>
-} @else if (!filteredJobs().length) {
-  <div class="bg-white shadow sm:rounded-md p-6 text-center text-gray-600">
-    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+  <div class="flex">
+    <svg
+      class="h-5 w-5 text-red-400 mr-2"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+        clip-rule="evenodd"
+      ></path>
     </svg>
-    <p class="text-lg font-medium mb-2">No hay transcripciones</p>
-    <p class="text-sm">@if (searchTerm() || statusFilter() !== 'all' || languageFilter() !== 'all') {
-      No se encontraron transcripciones con los filtros aplicados.
-    } @else {
-      Aún no has creado ninguna transcripción. ¡Crea tu primera transcripción!
-    }</p>
+    {{ error() }}
   </div>
+</div>
+} @else if (!filteredJobs().length) {
+<div class="bg-white shadow sm:rounded-md p-6 text-center text-gray-600">
+  <svg
+    class="mx-auto h-12 w-12 text-gray-400 mb-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+    ></path>
+  </svg>
+  <p class="text-lg font-medium mb-2">No hay transcripciones</p>
+  <p class="text-sm">
+    @if (searchTerm() || statusFilter() !== 'all' || languageFilter() !== 'all')
+    { No se encontraron transcripciones con los filtros aplicados. } @else { Aún
+    no has creado ninguna transcripción. ¡Crea tu primera transcripción! }
+  </p>
+</div>
 } @else {
-  <app-transcriptions-table
-    [jobs]="filteredJobs()"
-    (viewJob)="viewJob($event)"
-    (deleteJob)="deleteJob($event)"
-  ></app-transcriptions-table>
+<app-transcriptions-table
+  [jobs]="filteredJobs()"
+  (viewJob)="viewJob($event)"
+  (deleteJob)="deleteJob($event)"
+></app-transcriptions-table>
 }
 
 <!-- Pagination (simplificada por ahora) -->
 @if (filteredJobs().length > 0) {
-  <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-md">
-    <div class="flex-1 flex justify-between sm:hidden">
-      <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-        Anterior
-      </button>
-      <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-        Siguiente
-      </button>
-    </div>
-    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-      <div>
-        <p class="text-sm text-gray-700">
-          Mostrando <span class="font-medium">{{ filteredJobs().length }}</span> transcripciones
-        </p>
-      </div>
+<div
+  class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-md"
+>
+  <div class="flex-1 flex justify-between sm:hidden">
+    <button
+      class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+    >
+      Anterior
+    </button>
+    <button
+      class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+    >
+      Siguiente
+    </button>
+  </div>
+  <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+    <div>
+      <p class="text-sm text-gray-700">
+        Mostrando
+        <span class="font-medium">{{ filteredJobs().length }}</span>
+        transcripciones
+      </p>
     </div>
   </div>
+</div>
 }
+
+<!-- Modal de confirmación de eliminación -->
+<app-modal
+  [open]="showDeleteModal()"
+  title="¿Eliminar transcripción?"
+  size="md"
+  (closed)="onCloseDeleteModal()"
+>
+  <div>
+    <p class="text-gray-600">
+      ¿Estás seguro de que deseas eliminar la transcripción
+      <span class="font-semibold text-gray-900"
+        >"{{ jobToDelete()?.title }}"</span
+      >?
+    </p>
+    <p class="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
+  </div>
+  <div modal-footer class="flex gap-4">
+    <app-button variant="secondary" (clicked)="onCloseDeleteModal()">
+      Cancelar
+    </app-button>
+    <app-button variant="danger" (clicked)="onConfirmDelete()">
+      Eliminar
+    </app-button>
+  </div>
+</app-modal>

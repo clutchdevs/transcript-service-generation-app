@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
+import { Modal } from '../../../../shared/components/ui/modal/modal';
 import { TranscriptionsFilters } from './components/transcriptions-filters/transcriptions-filters';
 import { TranscriptionsTable } from './components/transcriptions-table/transcriptions-table';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
@@ -12,7 +13,7 @@ import { SelectOption } from '../../../../shared/components/ui/select/select';
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button, TranscriptionsFilters, TranscriptionsTable],
+  imports: [CommonModule, Button, Modal, TranscriptionsFilters, TranscriptionsTable],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })
@@ -29,6 +30,10 @@ export class Transcriptions implements OnInit {
   readonly statusFilter = signal<string>('all');
   readonly languageFilter = signal<string>('all');
   private hasLoadedInitialData = false;
+
+  // Modal de confirmación
+  readonly showDeleteModal = signal(false);
+  readonly jobToDelete = signal<TranscriptionJob | null>(null);
 
   // Idiomas disponibles
   readonly languages = LANGUAGES;
@@ -149,8 +154,27 @@ export class Transcriptions implements OnInit {
   }
 
   deleteJob(job: TranscriptionJob): void {
-    console.log('Delete job:', job);
-    // TODO: Implementar eliminación de transcripción
+    this.jobToDelete.set(job);
+    this.showDeleteModal.set(true);
+  }
+
+  onConfirmDelete(): void {
+    const job = this.jobToDelete();
+    if (job) {
+      console.log('Eliminando transcripción:', job);
+      // TODO: Implementar eliminación de transcripción en el backend
+      // Por ahora solo removemos del array local
+      const currentJobs = this.jobs();
+      const updatedJobs = currentJobs.filter(j => j.id !== job.id);
+      this.jobs.set(updatedJobs);
+      console.log('Transcripción eliminada localmente:', job.id);
+    }
+    this.onCloseDeleteModal();
+  }
+
+  onCloseDeleteModal(): void {
+    this.showDeleteModal.set(false);
+    this.jobToDelete.set(null);
   }
 
   cancelJob(job: TranscriptionJob): void {
