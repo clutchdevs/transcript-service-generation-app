@@ -12,7 +12,7 @@
         (valueChange)="onSearchChange($event)"
       ></app-input>
     </div>
-    <div class="flex gap-2">
+    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
       <app-select
         [options]="statusOptions"
         [value]="statusFilter"
