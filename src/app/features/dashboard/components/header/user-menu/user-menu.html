@@ -1,12 +1,12 @@
 <div class="relative">
   <button
+    #menuButton
     (click)="onMenuToggle()"
     type="button"
-    class="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+    class="flex items-center space-x-3 text-sm rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
     id="user-menu-button"
-    aria-expanded="false"
-    aria-haspopup="true"
     [attr.aria-expanded]="isOpen"
+    aria-haspopup="true"
   >
     <span class="sr-only">Abrir menú de usuario</span>
 
@@ -19,8 +19,14 @@
       <p class="text-xs text-gray-500">{{ userEmail() }}</p>
     </div>
 
-    <!-- Dropdown arrow -->
-    <svg class="hidden md:block h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <!-- Dropdown arrow with rotation animation -->
+    <svg 
+      class="hidden md:block h-4 w-4 text-gray-400 transition-transform duration-200"
+      [class.rotate-180]="isOpen"
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
     </svg>
   </button>
@@ -28,43 +34,57 @@
   <!-- User Menu Dropdown -->
   @if (isOpen) {
     <div
-      class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+      #dropdown
+      (keydown)="onKeyDown($event)"
+      class="user-menu-dropdown absolute right-0 mt-2 w-56 origin-top-right rounded-lg bg-white py-2 shadow-md focus:outline-none z-50"
       role="menu"
       aria-orientation="vertical"
       aria-labelledby="user-menu-button"
-      tabindex="-1"
     >
-      <!-- User Info in Dropdown -->
-      <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 md:hidden">
-        <p class="font-medium">{{ userDisplayName() }}</p>
-        <p class="text-gray-500">{{ userEmail() }}</p>
+      <!-- User Info in Dropdown (mobile only) -->
+      <div class="px-4 py-3 text-sm text-gray-700 border-b border-gray-100 md:hidden">
+        <p class="font-medium text-gray-900">{{ userDisplayName() }}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ userEmail() }}</p>
       </div>
 
       <!-- Menu Items -->
-      <a
-        href="#"
-        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      <button
+        (click)="onProfileClick()"
+        class="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
         role="menuitem"
-        tabindex="-1"
+        tabindex="0"
       >
-        Mi perfil
-      </a>
-      <a
-        href="#"
-        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span>Mi perfil</span>
+      </button>
+
+      <button
+        (click)="onSettingsClick()"
+        class="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
         role="menuitem"
-        tabindex="-1"
+        tabindex="0"
       >
-        Configuración
-      </a>
-      <div class="border-t border-gray-100"></div>
+        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span>Configuración</span>
+      </button>
+
+      <div class="border-t border-gray-100 my-1"></div>
+
       <button
         (click)="onLogout()"
-        class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 focus:outline-none focus:bg-red-50"
+        class="w-full flex items-center px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 focus:outline-none focus:bg-red-50 transition-colors"
         role="menuitem"
-        tabindex="-1"
+        tabindex="0"
       >
-        Cerrar sesión
+        <svg class="w-5 h-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        <span>Cerrar sesión</span>
       </button>
     </div>
   }

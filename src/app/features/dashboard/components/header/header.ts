@@ -33,6 +33,8 @@ export class Header {
   @Output() logout = new EventEmitter<void>();
   @Output() mobileMenuToggle = new EventEmitter<void>();
   @Output() userMenuToggle = new EventEmitter<void>();
+  @Output() profileClick = new EventEmitter<void>();
+  @Output() settingsClick = new EventEmitter<void>();
 
   // Internal state
   private isMobileMenuOpen = signal(false);
@@ -56,5 +58,15 @@ export class Header {
     this.userMenuToggle.emit();
   }
 
+  onProfileClick(): void {
+    this.profileClick.emit();
+    // Cerrar el menú después de hacer click
+    this.isUserMenuOpen.set(false);
+  }
 
+  onSettingsClick(): void {
+    this.settingsClick.emit();
+    // Cerrar el menú después de hacer click
+    this.isUserMenuOpen.set(false);
+  }
 }

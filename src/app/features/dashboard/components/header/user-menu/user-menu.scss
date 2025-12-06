@@ -1,0 +1,45 @@
+// User Menu Component Styles
+
+:host {
+  display: block;
+}
+
+// Dropdown animation
+.user-menu-dropdown {
+  animation: slideDownFadeIn 0.2s ease-out;
+}
+
+@keyframes slideDownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Chevron rotation (handled via Tailwind classes in template)
+// The rotation-180 class is applied conditionally
+
+// Menu item hover states
+button[role="menuitem"] {
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .user-menu-dropdown,
+  button[role="menuitem"],
+  svg {
+    animation: none;
+    transition: none;
+  }
+}
+
