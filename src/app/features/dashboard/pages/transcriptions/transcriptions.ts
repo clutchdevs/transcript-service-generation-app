@@ -1,14 +1,16 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
+import { SelectComponent, SelectOption } from '../../../../shared/components/ui/select/select';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
+import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants';
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button],
+  imports: [CommonModule, Button, SelectComponent],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })
@@ -25,6 +27,22 @@ export class Transcriptions implements OnInit {
   readonly statusFilter = signal<string>('all');
   readonly languageFilter = signal<string>('all');
   private hasLoadedInitialData = false;
+
+  // Idiomas disponibles
+  readonly languages = LANGUAGES;
+
+  // Opciones para los selects
+  readonly statusOptions: SelectOption[] = [
+    { label: 'Todos los estados', value: 'all' },
+    { label: 'Pendiente', value: 'pendiente' },
+    { label: 'Completado', value: 'completado' },
+    { label: 'Error', value: 'error' }
+  ];
+
+  readonly languageOptions: SelectOption[] = [
+    { label: 'Todos los idiomas', value: 'all' },
+    ...LANGUAGES.map(lang => ({ label: lang.label, value: lang.value }))
+  ];
 
   // Computed signals
   readonly user = computed(() => this.auth.user());
@@ -108,14 +126,12 @@ export class Transcriptions implements OnInit {
     this.searchTerm.set(target.value);
   }
 
-  onStatusFilterChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.statusFilter.set(target.value);
+  onStatusFilterChange(value: string | number): void {
+    this.statusFilter.set(String(value));
   }
 
-  onLanguageFilterChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.languageFilter.set(target.value);
+  onLanguageFilterChange(value: string | number): void {
+    this.languageFilter.set(String(value));
   }
 
   goToNew(): void {
