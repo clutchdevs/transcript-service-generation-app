@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SidenavHeader } from './sidenav-header/sidenav-header';
 import { SidenavItem } from './sidenav-item/sidenav-item';
@@ -39,7 +39,7 @@ export class Sidenav implements OnInit, OnDestroy {
   @Output() toggleCollapse = new EventEmitter<boolean>();
   @Output() mobileMenuClose = new EventEmitter<void>();
 
-  private router = new Router();
+  private router = inject(Router);
 
   // Internal state
   private isCollapsed = signal(false);

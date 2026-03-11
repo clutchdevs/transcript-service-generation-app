@@ -20,7 +20,7 @@ export class NewTranscription {
   readonly labelStandard = this.operatingPoints.find(op => op.value === 'standard')?.label ?? 'Estándar';
   readonly labelEnhanced = this.operatingPoints.find(op => op.value === 'enhanced')?.label ?? 'Mejorada';
 
-  private navigation = new NavigationService();
+  private navigation = inject(NavigationService);
   private transcriptions = inject(Transcriptions);
   private auth = inject(Auth);
 
