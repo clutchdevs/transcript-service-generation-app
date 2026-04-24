@@ -21,6 +21,7 @@ export class Button {
   @Input() iconPosition: 'left' | 'right' = 'left';
   @Input() ariaLabel?: string; // For icon-only buttons
   @Input() customClasses?: string; // For additional custom classes
+  @Input() iconOnly = false;
 
   @Output() clicked = new EventEmitter<void>();
 
@@ -33,10 +34,16 @@ export class Button {
   get buttonClasses(): string {
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
-    const sizeClasses = {
+    const regularSizeClasses = {
       sm: 'px-3 py-2 text-sm',
       md: 'px-4 py-3 text-sm',
       lg: 'px-6 py-4 text-base'
+    };
+
+    const iconOnlySizeClasses = {
+      sm: 'p-2',
+      md: 'p-2.5',
+      lg: 'p-3'
     };
 
     const variantClasses = {
@@ -49,7 +56,8 @@ export class Button {
 
     const widthClass = this.fullWidth ? 'w-full' : '';
     const customClass = this.customClasses || '';
+    const sizeClass = this.iconOnly ? iconOnlySizeClasses[this.size] : regularSizeClasses[this.size];
 
-    return `${baseClasses} ${sizeClasses[this.size]} ${variantClasses[this.variant]} ${widthClass} ${customClass}`;
+    return `${baseClasses} ${sizeClass} ${variantClasses[this.variant]} ${widthClass} ${customClass}`;
   }
 }

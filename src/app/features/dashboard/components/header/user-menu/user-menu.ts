@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter, computed, HostListener, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { User } from '../../../../../core/services/auth/auth';
 import { Avatar } from '../../../../../shared/components/ui/avatar/avatar';
+import { Button } from '../../../../../shared/components/ui/button/button';
 
 @Component({
   selector: 'app-user-menu',
   standalone: true,
-  imports: [Avatar],
+  imports: [Avatar, Button],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss'
 })
@@ -18,7 +19,7 @@ export class UserMenu implements AfterViewInit, OnDestroy, OnChanges {
   @Output() profileClick = new EventEmitter<void>();
   @Output() settingsClick = new EventEmitter<void>();
 
-  @ViewChild('menuButton', { static: false }) menuButtonRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('menuButton', { static: false }) menuButtonRef?: ElementRef<HTMLElement>;
   @ViewChild('dropdown', { static: false }) dropdownRef?: ElementRef<HTMLDivElement>;
 
   private menuItems: HTMLElement[] = [];

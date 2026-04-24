@@ -3,11 +3,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Auth, ResetPasswordRequest } from '../../../../core/services/auth/auth';
+import { Button } from '../../../../shared/components/ui/button/button';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button],
   templateUrl: './reset-password.html',
   styleUrl: './reset-password.scss'
 })

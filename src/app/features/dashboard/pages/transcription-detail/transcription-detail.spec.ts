@@ -6,6 +6,7 @@ import { TranscriptionDetail } from './transcription-detail';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
+import { TranscriptionDraftService } from '../../../../core/services/transcription-draft/transcription-draft';
 
 const mockJob = {
   id: 'test-job-id',
@@ -34,9 +35,25 @@ const mockJob = {
 describe('TranscriptionDetail', () => {
   let component: TranscriptionDetail;
   let fixture: ComponentFixture<TranscriptionDetail>;
+  let draftServiceMock: {
+    load: jest.Mock;
+    save: jest.Mock;
+    clear: jest.Mock;
+  };
 
   beforeEach(async () => {
     history.replaceState({ job: mockJob }, '', '/dashboard/transcriptions/test-job-id');
+
+    draftServiceMock = {
+      load: jest.fn().mockReturnValue(null),
+      save: jest.fn().mockImplementation((jobId: string, originalText: string, editedText: string) => ({
+        jobId,
+        originalText,
+        editedText,
+        updatedAt: Date.now(),
+      })),
+      clear: jest.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [TranscriptionDetail],
@@ -74,6 +91,10 @@ describe('TranscriptionDetail', () => {
             navigate: jest.fn(),
             goToDashboard: jest.fn(),
           }
+        },
+        {
+          provide: TranscriptionDraftService,
+          useValue: draftServiceMock,
         }
       ]
     })
@@ -110,6 +131,31 @@ describe('TranscriptionDetail', () => {
 
     const pageTitle = fixture.nativeElement.querySelector('h2');
     expect(pageTitle.textContent).toContain('Título actualizado');
+  });
+
+  it('should switch to editable mode and save edited transcript', () => {
+    const editableButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Editable') as HTMLButtonElement;
+
+    editableButton.click();
+    fixture.detectChanges();
+
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea).toBeTruthy();
+
+    textarea.value = 'Texto editado por el usuario';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const saveButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
+
+    saveButton.click();
+    fixture.detectChanges();
+
+    expect(draftServiceMock.save).toHaveBeenCalled();
+    expect(component.editedTranscript()).toBe('Texto editado por el usuario');
+    expect(component.saveStatus()).toBe('saved');
   });
 });
 

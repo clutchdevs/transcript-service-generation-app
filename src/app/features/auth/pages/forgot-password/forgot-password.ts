@@ -3,11 +3,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
 import { Auth } from '../../../../core/services/auth/auth';
+import { Button } from '../../../../shared/components/ui/button/button';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button],
   templateUrl: './forgot-password.html',
   styleUrl: './forgot-password.scss'
 })

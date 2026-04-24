@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Button } from '../../../../../shared/components/ui/button/button';
 
 @Component({
   selector: 'app-sidenav-header',
   standalone: true,
-  imports: [],
+  imports: [Button],
   templateUrl: './sidenav-header.html',
   styleUrl: './sidenav-header.scss'
 })

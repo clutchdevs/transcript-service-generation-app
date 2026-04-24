@@ -5,6 +5,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
 import { ToastService } from '../../../../core/services/toast/toast';
+import { TranscriptionDraftService } from '../../../../core/services/transcription-draft/transcription-draft';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
@@ -24,17 +25,25 @@ interface TranscriptResultLike {
   styleUrl: './transcription-detail.scss'
 })
 export class TranscriptionDetail implements OnInit, OnDestroy {
+  private readonly AUTOSAVE_DEBOUNCE_MS = 1500;
+
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private transcriptionsService = inject(TranscriptionsService);
   private navigation = inject(NavigationService);
   private auth = inject(Auth);
   private toast = inject(ToastService);
+  private draftService = inject(TranscriptionDraftService);
   private destroy$ = new Subject<void>();
+  private autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Signals para el estado
   readonly job = signal<TranscriptionJob | null>(null);
   readonly transcript = signal<string>('');
+  readonly editedTranscript = signal<string>('');
+  readonly transcriptMode = signal<'original' | 'edited'>('original');
+  readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  readonly lastSavedAt = signal<number | null>(null);
   readonly isLoading = signal(false);
   readonly isLoadingTranscript = signal(false);
   readonly error = signal<string | null>(null);
@@ -47,6 +56,23 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
 
   // Computed signals
   readonly hasTranscript = computed(() => !!this.transcript() && this.transcript().length > 0);
+  readonly activeTranscript = computed(() => this.transcriptMode() === 'edited' ? this.editedTranscript() : this.transcript());
+  readonly hasUnsavedChanges = computed(() => this.editedTranscript() !== this.transcript());
+  readonly saveStatusMessage = computed(() => {
+    switch (this.saveStatus()) {
+      case 'saving':
+        return 'Guardando...';
+      case 'saved':
+        if (this.lastSavedAt()) {
+          return `Guardado ${new Date(this.lastSavedAt() as number).toLocaleTimeString()}`;
+        }
+        return 'Guardado';
+      case 'error':
+        return 'Error al guardar';
+      default:
+        return '';
+    }
+  });
   readonly isCompleted = computed(() => this.job()?.statusId === 3);
   readonly isPending = computed(() => this.job()?.statusId === 2);
   readonly hasError = computed(() => this.job()?.statusId === 4);
@@ -58,6 +84,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       .subscribe(async params => {
         const jobId = params['id'];
         if (jobId) {
+          this.resetTranscriptState();
           const stateJob = this.getJobFromNavigationState(jobId);
 
           if (stateJob) {
@@ -76,6 +103,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearAutosaveTimeout();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -83,7 +111,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   async loadJob(jobId: string): Promise<void> {
     this.isLoading.set(true);
     this.error.set(null);
-    this.transcript.set('');
+    this.resetTranscriptState();
 
     try {
       // Obtener el usuario actual para cargar los jobs
@@ -128,6 +156,40 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
   }
 
+  setTranscriptMode(mode: 'original' | 'edited'): void {
+    if (mode === 'edited' && !this.hasTranscript()) {
+      this.toast.info('No hay transcripción original para editar.');
+      return;
+    }
+    this.transcriptMode.set(mode);
+  }
+
+  onEditedTranscriptInput(event: Event): void {
+    const nextValue = (event.target as HTMLTextAreaElement).value;
+    this.editedTranscript.set(nextValue);
+    this.saveStatus.set('idle');
+    this.scheduleAutosave();
+  }
+
+  saveEditsManually(): void {
+    const saved = this.persistDraft();
+    if (saved) {
+      this.toast.success('Cambios guardados.');
+    } else {
+      this.toast.error('No se pudieron guardar los cambios.');
+    }
+  }
+
+  restoreEditedFromOriginal(): void {
+    this.editedTranscript.set(this.transcript());
+    const saved = this.persistDraft();
+    if (saved) {
+      this.toast.info('Se restauró el texto original en la versión editable.');
+    } else {
+      this.toast.error('No se pudo restaurar el texto editable.');
+    }
+  }
+
   goBack(): void {
     this.navigation.navigate('/dashboard/transcriptions');
   }
@@ -149,7 +211,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   copyTranscript(): void {
-    const transcriptText = this.transcript();
+    const transcriptText = this.activeTranscript();
     if (transcriptText) {
       navigator.clipboard.writeText(transcriptText).then(() => {
         this.toast.success('Texto copiado al portapapeles.');
@@ -164,7 +226,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   downloadTranscript(): void {
-    const transcriptText = this.transcript();
+    const transcriptText = this.activeTranscript();
     const job = this.job();
     if (transcriptText && job) {
       const blob = new Blob([transcriptText], { type: 'text/plain' });
@@ -215,16 +277,18 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   private async loadTranscriptIfNeeded(job: TranscriptionJob): Promise<void> {
+    let transcriptText = '';
+
     if (this.hydrateTranscriptFromJob(job)) {
-      return;
-    }
-
-    if (job.statusId === 3 && job.referenceId) {
+      transcriptText = this.transcript();
+    } else if (job.statusId === 3 && job.referenceId) {
       await this.loadTranscript(job.referenceId);
-      return;
+      transcriptText = this.transcript();
+    } else {
+      this.transcript.set('');
     }
 
-    this.transcript.set('');
+    this.initializeEditableTranscript(job, transcriptText);
   }
 
   private hydrateTranscriptFromJob(job: TranscriptionJob): boolean {
@@ -276,6 +340,63 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
 
     return text.trim();
+  }
+
+  private initializeEditableTranscript(job: TranscriptionJob, originalText: string): void {
+    const draft = this.draftService.load(job.id);
+
+    if (draft) {
+      this.editedTranscript.set(draft.editedText);
+      this.lastSavedAt.set(draft.updatedAt);
+      this.saveStatus.set('saved');
+      return;
+    }
+
+    this.editedTranscript.set(originalText);
+    this.lastSavedAt.set(null);
+    this.saveStatus.set('idle');
+  }
+
+  private scheduleAutosave(): void {
+    this.clearAutosaveTimeout();
+    this.autosaveTimeout = setTimeout(() => {
+      this.persistDraft();
+    }, this.AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  private persistDraft(): boolean {
+    const currentJob = this.job();
+    if (!currentJob) {
+      return false;
+    }
+
+    this.saveStatus.set('saving');
+
+    try {
+      const savedDraft = this.draftService.save(currentJob.id, this.transcript(), this.editedTranscript());
+      this.lastSavedAt.set(savedDraft.updatedAt);
+      this.saveStatus.set('saved');
+      return true;
+    } catch {
+      this.saveStatus.set('error');
+      return false;
+    }
+  }
+
+  private clearAutosaveTimeout(): void {
+    if (this.autosaveTimeout) {
+      clearTimeout(this.autosaveTimeout);
+      this.autosaveTimeout = null;
+    }
+  }
+
+  private resetTranscriptState(): void {
+    this.clearAutosaveTimeout();
+    this.transcriptMode.set('original');
+    this.transcript.set('');
+    this.editedTranscript.set('');
+    this.saveStatus.set('idle');
+    this.lastSavedAt.set(null);
   }
 
   /**
