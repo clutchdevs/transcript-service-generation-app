@@ -36,6 +36,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   private draftService = inject(TranscriptionDraftService);
   private destroy$ = new Subject<void>();
   private autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private relativeTimeInterval: ReturnType<typeof setInterval> | null = null;
 
   // Signals para el estado
   readonly job = signal<TranscriptionJob | null>(null);
@@ -44,6 +45,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly transcriptMode = signal<'original' | 'edited'>('original');
   readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   readonly lastSavedAt = signal<number | null>(null);
+  readonly nowTimestamp = signal(Date.now());
   readonly isLoading = signal(false);
   readonly isLoadingTranscript = signal(false);
   readonly error = signal<string | null>(null);
@@ -58,6 +60,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly hasTranscript = computed(() => !!this.transcript() && this.transcript().length > 0);
   readonly activeTranscript = computed(() => this.transcriptMode() === 'edited' ? this.editedTranscript() : this.transcript());
   readonly hasUnsavedChanges = computed(() => this.editedTranscript() !== this.transcript());
+  readonly canSaveEdits = computed(() => this.hasUnsavedChanges() && this.saveStatus() !== 'saving');
   readonly saveStatusMessage = computed(() => {
     switch (this.saveStatus()) {
       case 'saving':
@@ -73,11 +76,60 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
         return '';
     }
   });
+  readonly saveStatusBadgeClasses = computed(() => {
+    const base = 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium';
+
+    if (this.saveStatus() === 'saving') {
+      return `${base} bg-amber-100 text-amber-800`;
+    }
+
+    if (this.saveStatus() === 'saved') {
+      return `${base} bg-green-100 text-green-800`;
+    }
+
+    if (this.saveStatus() === 'error') {
+      return `${base} bg-red-100 text-red-800`;
+    }
+
+    if (this.hasUnsavedChanges()) {
+      return `${base} bg-blue-100 text-blue-800`;
+    }
+
+    return `${base} bg-gray-100 text-gray-700`;
+  });
+  readonly lastSavedRelative = computed(() => {
+    const lastSaved = this.lastSavedAt();
+    this.nowTimestamp();
+
+    if (!lastSaved) {
+      return '';
+    }
+
+    const seconds = Math.max(0, Math.floor((Date.now() - lastSaved) / 1000));
+    if (seconds < 5) {
+      return 'justo ahora';
+    }
+    if (seconds < 60) {
+      return `hace ${seconds}s`;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+      return `hace ${minutes}m`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    return `hace ${hours}h`;
+  });
   readonly isCompleted = computed(() => this.job()?.statusId === 3);
   readonly isPending = computed(() => this.job()?.statusId === 2);
   readonly hasError = computed(() => this.job()?.statusId === 4);
 
   ngOnInit(): void {
+    this.relativeTimeInterval = setInterval(() => {
+      this.nowTimestamp.set(Date.now());
+    }, 1000);
+
     // Obtener el ID de la ruta
     this.route.params
       .pipe(takeUntil(this.destroy$))
@@ -104,6 +156,10 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearAutosaveTimeout();
+    if (this.relativeTimeInterval) {
+      clearInterval(this.relativeTimeInterval);
+      this.relativeTimeInterval = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }

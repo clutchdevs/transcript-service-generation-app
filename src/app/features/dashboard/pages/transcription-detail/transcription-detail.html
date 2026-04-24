@@ -85,6 +85,7 @@
                       variant="primary"
                       size="sm"
                       [loading]="saveStatus() === 'saving'"
+                      [disabled]="!canSaveEdits()"
                       (clicked)="saveEditsManually()"
                     >
                       Guardar cambios
@@ -116,15 +117,20 @@
             </div>
 
             @if (transcriptMode() === 'edited') {
-              <p class="text-xs text-gray-500">
-                @if (saveStatusMessage()) {
-                  {{ saveStatusMessage() }}
-                } @else if (hasUnsavedChanges()) {
-                  Hay cambios sin guardar.
-                } @else {
-                  Sin cambios pendientes.
+              <div class="flex flex-wrap items-center gap-2">
+                <span [class]="saveStatusBadgeClasses()">
+                  @if (saveStatusMessage()) {
+                    {{ saveStatusMessage() }}
+                  } @else if (hasUnsavedChanges()) {
+                    Hay cambios sin guardar.
+                  } @else {
+                    Sin cambios pendientes.
+                  }
+                </span>
+                @if (lastSavedRelative() && saveStatus() !== 'saving') {
+                  <span class="text-xs text-gray-500">Último guardado {{ lastSavedRelative() }}</span>
                 }
-              </p>
+              </div>
             }
           </div>
 

@@ -157,6 +157,120 @@ describe('TranscriptionDetail', () => {
     expect(component.editedTranscript()).toBe('Texto editado por el usuario');
     expect(component.saveStatus()).toBe('saved');
   });
+
+  it('should restore local draft when available', () => {
+    draftServiceMock.load.mockReturnValue({
+      jobId: 'test-job-id',
+      originalText: 'Texto de transcripción inicial',
+      editedText: 'Texto recuperado del borrador',
+      updatedAt: 1713952800000,
+    });
+
+    const secondFixture = TestBed.createComponent(TranscriptionDetail);
+    const secondComponent = secondFixture.componentInstance;
+    secondFixture.detectChanges();
+    secondFixture.detectChanges();
+
+    expect(secondComponent.editedTranscript()).toBe('Texto recuperado del borrador');
+    expect(secondComponent.saveStatus()).toBe('saved');
+    expect(secondComponent.lastSavedAt()).toBe(1713952800000);
+  });
+
+  it('should disable manual save when there are no changes', () => {
+    const editableButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Editable') as HTMLButtonElement;
+
+    editableButton.click();
+    fixture.detectChanges();
+
+    const saveButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
+
+    expect(saveButton).toBeTruthy();
+    expect(saveButton.disabled).toBe(true);
+
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.value = 'Texto editado para habilitar guardado';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const updatedSaveButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
+
+    expect(updatedSaveButton.disabled).toBe(false);
+  });
+
+  it('should autosave edited transcript after debounce delay', () => {
+    jest.useFakeTimers();
+
+    try {
+      const editableButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Editable') as HTMLButtonElement;
+
+      editableButton.click();
+      fixture.detectChanges();
+
+      const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+      textarea.value = 'Texto editado para autosave';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(draftServiceMock.save).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1400);
+      expect(draftServiceMock.save).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(100);
+      expect(draftServiceMock.save).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('should show relative last saved label in editable mode', () => {
+    jest.useFakeTimers();
+
+    try {
+      const frozenNow = new Date('2026-04-24T12:00:00.000Z');
+      jest.setSystemTime(frozenNow);
+
+      component.transcriptMode.set('edited');
+      component.saveStatus.set('saved');
+      component.lastSavedAt.set(Date.now() - 6000);
+      component.nowTimestamp.set(Date.now());
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Último guardado hace 6s');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('should disable save button again after restoring original content', () => {
+    const editableButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Editable') as HTMLButtonElement;
+
+    editableButton.click();
+    fixture.detectChanges();
+
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.value = 'Texto temporal';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const saveButtonBeforeRestore = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
+    expect(saveButtonBeforeRestore.disabled).toBe(false);
+
+    const restoreButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Restaurar original') as HTMLButtonElement;
+    restoreButton.click();
+    fixture.detectChanges();
+
+    const saveButtonAfterRestore = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
+    expect(saveButtonAfterRestore.disabled).toBe(true);
+  });
 });
 
 
