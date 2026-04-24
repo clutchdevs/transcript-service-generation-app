@@ -1,0 +1,28 @@
+@if (messages().length > 0) {
+  <div class="pointer-events-none fixed left-1/2 top-4 z-[100] flex w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 flex-col gap-2 sm:left-auto sm:right-4 sm:top-4 sm:w-full sm:max-w-md sm:translate-x-0 md:right-6 md:top-6 md:max-w-lg">
+    @for (message of messages(); track message.id) {
+      <div [class]="getToastClasses(message)" role="status" aria-live="polite">
+        <div class="flex items-center gap-3 md:gap-4">
+          <span [class]="getIconContainerClasses(message)">
+            <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(message)"></path>
+            </svg>
+          </span>
+
+          <p class="flex-1 text-base font-medium leading-6 md:text-[17px]">{{ message.message }}</p>
+
+          <button
+            type="button"
+            class="shrink-0 rounded-md p-1.5 opacity-80 transition hover:opacity-100 hover:bg-black/5"
+            (click)="dismiss(message.id)"
+            aria-label="Cerrar notificación"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

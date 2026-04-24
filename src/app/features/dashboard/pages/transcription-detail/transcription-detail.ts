@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
+import { ToastService } from '../../../../core/services/toast/toast';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
@@ -28,6 +29,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   private transcriptionsService = inject(TranscriptionsService);
   private navigation = inject(NavigationService);
   private auth = inject(Auth);
+  private toast = inject(ToastService);
   private destroy$ = new Subject<void>();
 
   // Signals para el estado
@@ -36,7 +38,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly isLoadingTranscript = signal(false);
   readonly error = signal<string | null>(null);
-  readonly notice = signal<string | null>(null);
 
   readonly showCancelModal = signal(false);
   readonly showRetryModal = signal(false);
@@ -151,12 +152,15 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     const transcriptText = this.transcript();
     if (transcriptText) {
       navigator.clipboard.writeText(transcriptText).then(() => {
-        // Podrías mostrar un toast aquí
-        console.log('Transcripción copiada al portapapeles');
+        this.toast.success('Texto copiado al portapapeles.');
       }).catch(err => {
         console.error('Error al copiar:', err);
+        this.toast.error('No pudimos copiar el texto. Intenta de nuevo.');
       });
+      return;
     }
+
+    this.toast.info('Aún no hay texto disponible para copiar.');
   }
 
   downloadTranscript(): void {
@@ -172,7 +176,11 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      this.toast.success('Descarga iniciada correctamente.');
+      return;
     }
+
+    this.toast.info('Aún no hay una transcripción lista para descargar.');
   }
 
   /**
@@ -182,6 +190,11 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     const job = this.job();
     if (job) {
       await this.loadJob(job.id);
+      if (this.error()) {
+        this.toast.error('No pudimos actualizar el estado.');
+      } else {
+        this.toast.success('Estado actualizado correctamente.');
+      }
     }
   }
 
@@ -326,17 +339,17 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
 
   onConfirmCancel(): void {
     this.showCancelModal.set(false);
-    this.notice.set('La cancelación quedará habilitada cuando el backend exponga el endpoint.');
+    this.toast.info('La opción de cancelar estará disponible cuando backend habilite el endpoint.');
   }
 
   onConfirmRetry(): void {
     this.showRetryModal.set(false);
-    this.notice.set('El reintento quedará habilitado cuando el backend exponga el endpoint.');
+    this.toast.info('La opción de reintento estará disponible cuando backend habilite el endpoint.');
   }
 
   onConfirmDelete(): void {
     this.showDeleteModal.set(false);
-    this.notice.set('La eliminación quedará habilitada cuando el backend exponga el endpoint.');
+    this.toast.info('La eliminación estará disponible cuando backend habilite el endpoint.');
   }
 
   onConfirmEditTitle(): void {
@@ -349,7 +362,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
 
     if (!nextTitle) {
-      this.notice.set('El título no puede estar vacío.');
+      this.toast.error('El título no puede estar vacío.');
       return;
     }
 
@@ -369,10 +382,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     });
 
     this.showEditTitleModal.set(false);
-    this.notice.set('Título actualizado localmente. Se persistirá cuando exista endpoint de edición.');
-  }
-
-  clearNotice(): void {
-    this.notice.set(null);
+    this.toast.success('Título actualizado localmente. Se guardará en servidor cuando exista el endpoint.');
   }
 }
