@@ -118,53 +118,65 @@
         <!-- Actions -->
         <div class="bg-white shadow rounded-lg p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
-          <div class="space-y-2">
+          <div class="flex flex-col gap-3">
             @if (isPending()) {
-              <app-button
-                variant="secondary"
-                size="md"
-                class="w-full"
-                (clicked)="refreshJob()"
-              >
-                Actualizar estado
-              </app-button>
+              <div>
+                <app-button
+                  variant="secondary"
+                  size="md"
+                  [fullWidth]="true"
+                  (clicked)="refreshJob()"
+                >
+                  Actualizar estado
+                </app-button>
+              </div>
+              <div>
+                <app-button
+                  variant="ghost"
+                  size="md"
+                  [fullWidth]="true"
+                  customClasses="!text-red-600 hover:!text-red-700"
+                  (clicked)="cancelJob()"
+                >
+                  Cancelar
+                </app-button>
+              </div>
+            }
+            @if (hasError()) {
+              <div>
+                <app-button
+                  variant="primary"
+                  size="md"
+                  [fullWidth]="true"
+                  (clicked)="retryJob()"
+                >
+                  Reintentar
+                </app-button>
+              </div>
+            }
+            @if (isCompleted()) {
+              <div>
+                <app-button
+                  variant="secondary"
+                  size="md"
+                  [fullWidth]="true"
+                  (clicked)="editTitle()"
+                >
+                  Editar título
+                </app-button>
+              </div>
+            }
+            <div>
               <app-button
                 variant="ghost"
                 size="md"
-                class="w-full text-red-600 hover:text-red-700"
-                (clicked)="cancelJob()"
+                [fullWidth]="true"
+                customClasses="!text-red-600 hover:!text-red-700"
+                (clicked)="deleteJob()"
               >
-                Cancelar
+                Eliminar
               </app-button>
-            }
-            @if (hasError()) {
-              <app-button
-                variant="primary"
-                size="md"
-                class="w-full"
-                (clicked)="retryJob()"
-              >
-                Reintentar
-              </app-button>
-            }
-            @if (isCompleted()) {
-              <app-button
-                variant="secondary"
-                size="md"
-                class="w-full"
-                (clicked)="editTitle()"
-              >
-                Editar título
-              </app-button>
-            }
-            <app-button
-              variant="ghost"
-              size="md"
-              class="w-full text-red-600 hover:text-red-700"
-              (clicked)="deleteJob()"
-            >
-              Eliminar
-            </app-button>
+            </div>
           </div>
         </div>
 
