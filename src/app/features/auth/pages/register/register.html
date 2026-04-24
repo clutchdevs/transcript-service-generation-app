@@ -124,6 +124,9 @@
             </label>
           </div>
         </div>
+        @if (acceptTermsError()) {
+          <p class="text-sm text-red-600">{{ acceptTermsError() }}</p>
+        }
       </div>
 
       <!-- Submit Button -->
@@ -133,7 +136,7 @@
           variant="primary"
           [loading]="isLoading()"
           [fullWidth]="true"
-          [disabled]="!isFormValid() || isLoading()"
+          [disabled]="isLoading()"
         >
           @if (isLoading()) {
             Creando cuenta...
@@ -141,6 +144,9 @@
             Crear cuenta
           }
         </app-button>
+        @if (formErrorMessage()) {
+          <p class="mt-2 text-sm text-red-600">{{ formErrorMessage() }}</p>
+        }
       </div>
 
       <!-- Login Link -->

@@ -24,6 +24,8 @@ export class Register implements OnDestroy {
 
   // Form validation signal
   private formValid = signal(false);
+  readonly submitAttempted = signal(false);
+  private validationState = signal(0);
 
   // Computed signals for reactive UI - direct from Auth service
   readonly isLoading = computed(() => this.auth.isLoading());
@@ -35,8 +37,10 @@ export class Register implements OnDestroy {
 
   // Error messages - computed only when needed
   readonly firstNameError = computed(() => {
+    this.validationState();
     const firstNameControl = this.registerForm?.get('firstName');
-    if (firstNameControl?.touched && firstNameControl?.errors) {
+    const shouldShow = !!firstNameControl && (firstNameControl.touched || this.submitAttempted());
+    if (shouldShow && firstNameControl?.errors) {
       if (firstNameControl.errors['required']) return 'El nombre es requerido';
       if (firstNameControl.errors['minlength']) return 'El nombre debe tener al menos 2 caracteres';
     }
@@ -44,8 +48,10 @@ export class Register implements OnDestroy {
   });
 
   readonly lastNameError = computed(() => {
+    this.validationState();
     const lastNameControl = this.registerForm?.get('lastName');
-    if (lastNameControl?.touched && lastNameControl?.errors) {
+    const shouldShow = !!lastNameControl && (lastNameControl.touched || this.submitAttempted());
+    if (shouldShow && lastNameControl?.errors) {
       if (lastNameControl.errors['required']) return 'El apellido es requerido';
       if (lastNameControl.errors['minlength']) return 'El apellido debe tener al menos 2 caracteres';
     }
@@ -53,8 +59,10 @@ export class Register implements OnDestroy {
   });
 
   readonly emailError = computed(() => {
+    this.validationState();
     const emailControl = this.registerForm?.get('email');
-    if (emailControl?.touched && emailControl?.errors) {
+    const shouldShow = !!emailControl && (emailControl.touched || this.submitAttempted());
+    if (shouldShow && emailControl?.errors) {
       if (emailControl.errors['server']) return emailControl.errors['server'];
       if (emailControl.errors['required']) return 'El email es requerido';
       if (emailControl.errors['email']) return 'Ingresa un email válido';
@@ -63,8 +71,10 @@ export class Register implements OnDestroy {
   });
 
   readonly passwordError = computed(() => {
+    this.validationState();
     const passwordControl = this.registerForm?.get('password');
-    if (passwordControl?.touched && passwordControl?.errors) {
+    const shouldShow = !!passwordControl && (passwordControl.touched || this.submitAttempted());
+    if (shouldShow && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
       if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
@@ -72,12 +82,32 @@ export class Register implements OnDestroy {
   });
 
   readonly confirmPasswordError = computed(() => {
+    this.validationState();
     const confirmPasswordControl = this.registerForm?.get('confirmPassword');
-    if (confirmPasswordControl?.touched && confirmPasswordControl?.errors) {
+    const shouldShow = !!confirmPasswordControl && (confirmPasswordControl.touched || this.submitAttempted());
+    if (shouldShow && confirmPasswordControl?.errors) {
       if (confirmPasswordControl.errors['required']) return 'Confirma tu contraseña';
       if (confirmPasswordControl.errors['passwordMismatch']) return 'Las contraseñas no coinciden';
     }
     return '';
+  });
+
+  readonly acceptTermsError = computed(() => {
+    this.validationState();
+    const acceptTermsControl = this.registerForm?.get('acceptTerms');
+    const shouldShow = !!acceptTermsControl && (acceptTermsControl.touched || this.submitAttempted());
+    if (shouldShow && acceptTermsControl?.errors?.['required']) {
+      return 'Debes aceptar los términos y condiciones.';
+    }
+    return '';
+  });
+
+  readonly formErrorMessage = computed(() => {
+    this.validationState();
+    if (!this.submitAttempted() || this.registerForm.valid) {
+      return '';
+    }
+    return 'Completa los campos requeridos para crear tu cuenta.';
   });
 
   constructor() {
@@ -99,6 +129,7 @@ export class Register implements OnDestroy {
       .subscribe(() => {
         // Update form validity signal
         this.formValid.set(this.registerForm.valid);
+        this.bumpValidationState();
       });
 
     // Initial form validity check
@@ -136,6 +167,7 @@ export class Register implements OnDestroy {
    * Handle form submission
    */
   async onSubmit(): Promise<void> {
+    this.submitAttempted.set(true);
     if (this.registerForm.valid) {
       const registerData: RegisterRequest = {
         firstName: this.registerForm.get('firstName')?.value,
@@ -208,5 +240,10 @@ export class Register implements OnDestroy {
       emailControl.setErrors(nextErrors);
     }
     this.registerForm.updateValueAndValidity();
+    this.bumpValidationState();
+  }
+
+  private bumpValidationState(): void {
+    this.validationState.update((value) => value + 1);
   }
 }

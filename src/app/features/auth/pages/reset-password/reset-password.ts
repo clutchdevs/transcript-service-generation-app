@@ -22,6 +22,8 @@ export class ResetPassword implements OnDestroy {
   private formValid = signal(false);
   private isSuccess = signal(false);
   private token = signal<string | null>(null);
+  readonly submitAttempted = signal(false);
+  private validationState = signal(0);
 
   // Computed signals from Auth service
   readonly isLoading = computed(() => this.auth.isLoading());
@@ -32,8 +34,10 @@ export class ResetPassword implements OnDestroy {
 
   // Computed signals for validation errors
   readonly passwordError = computed(() => {
+    this.validationState();
     const passwordControl = this.resetForm.get('password');
-    if (passwordControl?.touched && passwordControl?.errors) {
+    const shouldShow = !!passwordControl && (passwordControl.touched || this.submitAttempted());
+    if (shouldShow && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
       if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 6 caracteres';
     }
@@ -41,12 +45,22 @@ export class ResetPassword implements OnDestroy {
   });
 
   readonly confirmPasswordError = computed(() => {
+    this.validationState();
     const confirmPasswordControl = this.resetForm.get('confirmPassword');
-    if (confirmPasswordControl?.touched && confirmPasswordControl?.errors) {
+    const shouldShow = !!confirmPasswordControl && (confirmPasswordControl.touched || this.submitAttempted());
+    if (shouldShow && confirmPasswordControl?.errors) {
       if (confirmPasswordControl.errors['required']) return 'Confirma tu contraseña';
       if (confirmPasswordControl.errors['passwordMismatch']) return 'Las contraseñas no coinciden';
     }
     return '';
+  });
+
+  readonly formErrorMessage = computed(() => {
+    this.validationState();
+    if (!this.submitAttempted() || this.resetForm.valid) {
+      return '';
+    }
+    return 'Corrige los errores del formulario para continuar.';
   });
 
   constructor() {
@@ -76,6 +90,7 @@ export class ResetPassword implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.formValid.set(this.resetForm.valid);
+        this.bumpValidationState();
       });
 
     this.formValid.set(this.resetForm.valid);
@@ -87,6 +102,7 @@ export class ResetPassword implements OnDestroy {
   }
 
   async onSubmit(): Promise<void> {
+    this.submitAttempted.set(true);
     if (this.resetForm.valid && this.token()) {
       const password = this.resetForm.get('password')?.value;
 
@@ -118,6 +134,7 @@ export class ResetPassword implements OnDestroy {
       // Note: We don't have a clearError method in Auth service for this specific case
       // The error will be cleared on the next API call
     }
+    this.bumpValidationState();
   }
 
   private passwordMatchValidator(form: FormGroup) {
@@ -143,5 +160,9 @@ export class ResetPassword implements OnDestroy {
       const control = this.resetForm.get(key);
       control?.markAsTouched();
     });
+  }
+
+  private bumpValidationState(): void {
+    this.validationState.update((value) => value + 1);
   }
 }

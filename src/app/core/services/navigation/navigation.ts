@@ -12,11 +12,11 @@ export const ROUTES = {
   DASHBOARD: {
     ROOT: '/dashboard',
     PROFILE: '/dashboard/profile',
+    SETTINGS: '/dashboard/settings',
     TRANSCRIPTIONS: '/dashboard/transcriptions',
     TRANSCRIPTION_DETAIL: (id: string) => `/dashboard/transcriptions/${id}`
   },
-  HOME: '/',
-  PROFILE: '/profile'
+  HOME: '/'
 } as const;
 
 @Injectable({
@@ -74,7 +74,14 @@ export class NavigationService {
    * Navigate to profile page
    */
   goToProfile(): void {
-    this.router.navigate([ROUTES.PROFILE]);
+    this.router.navigate([ROUTES.DASHBOARD.PROFILE]);
+  }
+
+  /**
+   * Navigate to settings page
+   */
+  goToSettings(): void {
+    this.router.navigate([ROUTES.DASHBOARD.SETTINGS]);
   }
 
   /**

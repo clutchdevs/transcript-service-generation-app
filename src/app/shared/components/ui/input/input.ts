@@ -105,7 +105,7 @@ export class InputComponent implements ControlValueAccessor {
       lg: 'px-4 py-4 text-base'
     };
 
-    const stateClasses = this.touched() && this.error ? 'border-red-300 bg-red-50' : 'border-gray-300';
+    const stateClasses = this.hasError ? 'border-red-300 bg-red-50' : 'border-gray-300';
 
     const iconClasses = this.icon ? (this.iconPosition === 'left' ? 'pl-10' : 'pr-10') : '';
     const passwordToggleClasses = this.showPasswordToggle && this.type === 'password' ? 'pr-10' : '';
@@ -147,7 +147,7 @@ export class InputComponent implements ControlValueAccessor {
 
   // Accessibility: Check if input has error
   get hasError(): boolean {
-    return this.touched() && !!this.error;
+    return !!this.error;
   }
 
   // Accessibility: Get aria-describedby value

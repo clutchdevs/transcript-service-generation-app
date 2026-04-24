@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { Auth } from '../../../../core/services/auth/auth';
+import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { STORAGE_KEYS } from '../../../../core/constants/storage';
 import { Header } from '../../components/header/header';
 import { Sidenav } from '../../components/sidenav/sidenav';
@@ -17,6 +18,7 @@ import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-i
 export class Home {
   private auth = inject(Auth);
   private router = inject(Router);
+  private navigation = inject(NavigationService);
 
   // Computed signals for reactive UI
   readonly user = computed(() => this.auth.user());
@@ -89,6 +91,14 @@ export class Home {
 
   onNewTranscription(): void {
     console.log('New transcription clicked');
+  }
+
+  onProfileClick(): void {
+    this.navigation.goToProfile();
+  }
+
+  onSettingsClick(): void {
+    this.navigation.goToSettings();
   }
 
   // Sidenav event handlers

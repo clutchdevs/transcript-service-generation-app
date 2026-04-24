@@ -113,7 +113,7 @@
           variant="primary"
           [loading]="isLoading()"
           [fullWidth]="true"
-          [disabled]="!isFormValid() || isLoading()"
+          [disabled]="isLoading()"
         >
           @if (isLoading()) {
             Iniciando sesión...
@@ -121,6 +121,9 @@
             Iniciar sesión
           }
         </app-button>
+        @if (formErrorMessage()) {
+          <p class="mt-2 text-sm text-red-600">{{ formErrorMessage() }}</p>
+        }
       </div>
 
       <!-- Sign Up Link -->

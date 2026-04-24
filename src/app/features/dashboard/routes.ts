@@ -21,6 +21,14 @@ export const dashboardRoutes: Routes = [
       {
         path: 'new',
         loadComponent: () => import('./pages/new-transcription/new-transcription').then((m) => m.NewTranscription),
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
       }
     ]
   }

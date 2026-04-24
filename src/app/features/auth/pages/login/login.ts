@@ -26,6 +26,8 @@ export class Login implements OnDestroy {
 
   // Success message signal
   private successMessage = signal<string | null>(null);
+  readonly submitAttempted = signal(false);
+  private validationState = signal(0);
 
   // Computed signals for reactive UI - direct from Auth service
   readonly isLoading = computed(() => this.auth.isLoading());
@@ -43,9 +45,10 @@ export class Login implements OnDestroy {
 
   // Error messages - computed only when needed
   readonly emailError = computed(() => {
+    this.validationState();
     const emailControl = this.loginForm?.get('email');
-    // Check the signal to make this reactive
-    if (this.emailTouched() && emailControl?.errors) {
+    const shouldShow = this.emailTouched() || this.submitAttempted();
+    if (shouldShow && emailControl?.errors) {
       if (emailControl.errors['required']) return 'El email es requerido';
       if (emailControl.errors['email']) return 'Ingresa un email válido';
     }
@@ -53,20 +56,29 @@ export class Login implements OnDestroy {
   });
 
   readonly passwordError = computed(() => {
+    this.validationState();
     const passwordControl = this.loginForm?.get('password');
-    // Check the signal to make this reactive
-    if (this.passwordTouched() && passwordControl?.errors) {
+    const shouldShow = this.passwordTouched() || this.submitAttempted();
+    if (shouldShow && passwordControl?.errors) {
       if (passwordControl.errors['required']) return 'La contraseña es requerida';
       if (passwordControl.errors['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
     }
     return '';
   });
 
+  readonly formErrorMessage = computed(() => {
+    this.validationState();
+    if (!this.submitAttempted() || this.loginForm.valid) {
+      return '';
+    }
+    return 'Revisa los campos marcados para continuar.';
+  });
+
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      rememberMe: [false]
+      rememberMe: [true]
     });
 
     // Clear any existing errors when component initializes
@@ -85,6 +97,7 @@ export class Login implements OnDestroy {
       .subscribe(() => {
         // Update form validity signal
         this.formValid.set(this.loginForm.valid);
+        this.bumpValidationState();
       });
 
     // Subscribe to email control status changes
@@ -92,6 +105,7 @@ export class Login implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.emailTouched.set(this.loginForm.get('email')?.touched || false);
+        this.bumpValidationState();
       });
 
     // Subscribe to password control status changes
@@ -99,6 +113,7 @@ export class Login implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.passwordTouched.set(this.loginForm.get('password')?.touched || false);
+        this.bumpValidationState();
       });
 
     // Initial form validity check
@@ -121,6 +136,7 @@ export class Login implements OnDestroy {
    * Handle form submission
    */
   async onSubmit(): Promise<void> {
+    this.submitAttempted.set(true);
     if (this.loginForm.valid) {
       const credentials: LoginRequest = {
         email: this.loginForm.get('email')?.value,
@@ -137,6 +153,8 @@ export class Login implements OnDestroy {
       }
     } else {
       this.markFormGroupTouched();
+      this.emailTouched.set(true);
+      this.passwordTouched.set(true);
     }
   }
 
@@ -180,5 +198,10 @@ export class Login implements OnDestroy {
       // Trigger form validation to clear errors
       this.loginForm.updateValueAndValidity();
     }
+    this.bumpValidationState();
+  }
+
+  private bumpValidationState(): void {
+    this.validationState.update((value) => value + 1);
   }
 }
