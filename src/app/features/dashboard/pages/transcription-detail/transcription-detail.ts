@@ -8,6 +8,12 @@ import { TranscriptionJob } from '../../../../core/services/transcriptions/trans
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { Auth } from '../../../../core/services/auth/auth';
 
+interface TranscriptResultLike {
+  type?: 'word' | 'punctuation' | string;
+  attaches_to?: 'previous' | 'next' | string;
+  alternatives?: Array<{ content?: string }>;
+}
+
 @Component({
   selector: 'app-transcription-detail',
   standalone: true,
@@ -40,10 +46,20 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     // Obtener el ID de la ruta
     this.route.params
       .pipe(takeUntil(this.destroy$))
-      .subscribe(params => {
+      .subscribe(async params => {
         const jobId = params['id'];
         if (jobId) {
-          this.loadJob(jobId);
+          const stateJob = this.getJobFromNavigationState(jobId);
+
+          if (stateJob) {
+            this.error.set(null);
+            this.isLoading.set(false);
+            this.job.set(stateJob);
+            await this.loadTranscriptIfNeeded(stateJob);
+            return;
+          }
+
+          await this.loadJob(jobId);
         } else {
           this.error.set('ID de transcripción no válido');
         }
@@ -58,6 +74,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   async loadJob(jobId: string): Promise<void> {
     this.isLoading.set(true);
     this.error.set(null);
+    this.transcript.set('');
 
     try {
       // Obtener el usuario actual para cargar los jobs
@@ -78,14 +95,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       }
 
       this.job.set(foundJob);
-
-      // Si la transcripción está completada, cargar el texto
-      if (foundJob.statusId === 3 && foundJob.referenceId) {
-        await this.loadTranscript(foundJob.referenceId);
-      } else if (foundJob.transcriptionText) {
-        // Si ya tiene el texto en el job, usarlo
-        this.transcript.set(foundJob.transcriptionText);
-      }
+      await this.loadTranscriptIfNeeded(foundJob);
     } catch (error) {
       console.error('Error loading job:', error);
       this.error.set('Error al cargar la transcripción');
@@ -167,6 +177,86 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
   }
 
+  private getJobFromNavigationState(jobId: string): TranscriptionJob | null {
+    const navigationState = this.router.getCurrentNavigation()?.extras?.state?.['job'] as TranscriptionJob | undefined;
+    const historyStateJob = (history.state as { job?: TranscriptionJob } | null)?.job;
+    const candidate = navigationState ?? historyStateJob;
+
+    if (!candidate) {
+      return null;
+    }
+
+    if (candidate.id === jobId || candidate.referenceId === jobId) {
+      return candidate;
+    }
+
+    return null;
+  }
+
+  private async loadTranscriptIfNeeded(job: TranscriptionJob): Promise<void> {
+    if (this.hydrateTranscriptFromJob(job)) {
+      return;
+    }
+
+    if (job.statusId === 3 && job.referenceId) {
+      await this.loadTranscript(job.referenceId);
+      return;
+    }
+
+    this.transcript.set('');
+  }
+
+  private hydrateTranscriptFromJob(job: TranscriptionJob): boolean {
+    if (typeof job.transcriptionText === 'string' && job.transcriptionText.trim().length > 0) {
+      this.transcript.set(job.transcriptionText);
+      return true;
+    }
+
+    const metadataTranscript = this.extractTranscriptFromMetadata(job.metadata);
+    if (metadataTranscript) {
+      this.transcript.set(metadataTranscript);
+      return true;
+    }
+
+    return false;
+  }
+
+  private extractTranscriptFromMetadata(metadata: Record<string, unknown> | null): string {
+    if (!metadata || typeof metadata !== 'object') {
+      return '';
+    }
+
+    const rawResults = metadata['results'];
+    if (!Array.isArray(rawResults)) {
+      return '';
+    }
+
+    return this.composeTranscriptFromResults(rawResults as TranscriptResultLike[]);
+  }
+
+  private composeTranscriptFromResults(results: TranscriptResultLike[]): string {
+    let text = '';
+
+    for (const result of results) {
+      const content = result.alternatives?.[0]?.content;
+      if (!content) {
+        continue;
+      }
+
+      if (result.type === 'punctuation' && result.attaches_to === 'previous') {
+        text += content;
+        continue;
+      }
+
+      if (text.length > 0 && !text.endsWith(' ')) {
+        text += ' ';
+      }
+      text += content;
+    }
+
+    return text.trim();
+  }
+
   /**
    * Cancel a pending transcription job
    */
@@ -234,4 +324,3 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
   }
 }
-

@@ -10,6 +10,7 @@ import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
 import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants';
 import { SelectOption } from '../../../../shared/components/ui/select/select';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-transcriptions',
@@ -21,6 +22,7 @@ export class Transcriptions implements OnInit {
   private transcriptionsService = inject(TranscriptionsService);
   private auth = inject(Auth);
   private navigation = inject(NavigationService);
+  private router = inject(Router);
 
   // Signals para el estado
   readonly jobs = signal<TranscriptionJob[]>([]);
@@ -144,8 +146,10 @@ export class Transcriptions implements OnInit {
     this.navigation.navigate(ROUTES.DASHBOARD.ROOT + '/new');
   }
 
-  async viewJob(job: TranscriptionJob): Promise<void> {
-    this.navigation.navigate(`/dashboard/transcriptions/${job.id}`);
+  viewJob(job: TranscriptionJob): void {
+    this.router.navigate(['/dashboard/transcriptions', job.id], {
+      state: { job }
+    });
   }
 
   editJob(job: TranscriptionJob): void {
