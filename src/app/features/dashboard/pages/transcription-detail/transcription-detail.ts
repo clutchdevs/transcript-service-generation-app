@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
+import { Modal } from '../../../../shared/components/ui/modal/modal';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
@@ -17,7 +18,7 @@ interface TranscriptResultLike {
 @Component({
   selector: 'app-transcription-detail',
   standalone: true,
-  imports: [CommonModule, Button],
+  imports: [CommonModule, Button, Modal],
   templateUrl: './transcription-detail.html',
   styleUrl: './transcription-detail.scss'
 })
@@ -35,6 +36,13 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly isLoadingTranscript = signal(false);
   readonly error = signal<string | null>(null);
+  readonly notice = signal<string | null>(null);
+
+  readonly showCancelModal = signal(false);
+  readonly showRetryModal = signal(false);
+  readonly showDeleteModal = signal(false);
+  readonly showEditTitleModal = signal(false);
+  readonly editTitleValue = signal('');
 
   // Computed signals
   readonly hasTranscript = computed(() => !!this.transcript() && this.transcript().length > 0);
@@ -261,15 +269,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
    * Cancel a pending transcription job
    */
   cancelJob(): void {
-    const job = this.job();
-    if (job) {
-      // TODO: Implementar cancelación de transcripción
-      console.log('Cancel job:', job);
-      // Mostrar confirmación antes de cancelar
-      if (confirm('¿Estás seguro de que deseas cancelar esta transcripción?')) {
-        // Llamar al endpoint de cancelación cuando esté disponible
-        // await this.transcriptionsService.cancelJob(job.id);
-      }
+    if (this.job()) {
+      this.showCancelModal.set(true);
     }
   }
 
@@ -277,15 +278,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
    * Retry a failed transcription job
    */
   retryJob(): void {
-    const job = this.job();
-    if (job) {
-      // TODO: Implementar reintento de transcripción
-      console.log('Retry job:', job);
-      // Mostrar confirmación antes de reintentar
-      if (confirm('¿Deseas reintentar esta transcripción?')) {
-        // Llamar al endpoint de reintento cuando esté disponible
-        // await this.transcriptionsService.retryJob(job.id);
-      }
+    if (this.job()) {
+      this.showRetryModal.set(true);
     }
   }
 
@@ -295,15 +289,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   editTitle(): void {
     const job = this.job();
     if (job) {
-      // TODO: Implementar edición de título
-      const newTitle = prompt('Nuevo título:', job.title);
-      if (newTitle && newTitle.trim() && newTitle !== job.title) {
-        console.log('Update title:', newTitle);
-        // Llamar al endpoint de actualización cuando esté disponible
-        // await this.transcriptionsService.updateJobTitle(job.id, newTitle.trim());
-        // Recargar el job después de actualizar
-        // await this.loadJob(job.id);
-      }
+      this.editTitleValue.set(job.title || '');
+      this.showEditTitleModal.set(true);
     }
   }
 
@@ -311,16 +298,81 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
    * Delete transcription job
    */
   deleteJob(): void {
-    const job = this.job();
-    if (job) {
-      // TODO: Implementar eliminación de transcripción
-      if (confirm('¿Estás seguro de que deseas eliminar esta transcripción? Esta acción no se puede deshacer.')) {
-        console.log('Delete job:', job);
-        // Llamar al endpoint de eliminación cuando esté disponible
-        // await this.transcriptionsService.deleteJob(job.id);
-        // Redirigir al listado después de eliminar
-        // this.goBack();
-      }
+    if (this.job()) {
+      this.showDeleteModal.set(true);
     }
+  }
+
+  onCloseCancelModal(): void {
+    this.showCancelModal.set(false);
+  }
+
+  onCloseRetryModal(): void {
+    this.showRetryModal.set(false);
+  }
+
+  onCloseDeleteModal(): void {
+    this.showDeleteModal.set(false);
+  }
+
+  onCloseEditTitleModal(): void {
+    this.showEditTitleModal.set(false);
+  }
+
+  onEditTitleInput(event: Event): void {
+    const nextTitle = (event.target as HTMLInputElement).value;
+    this.editTitleValue.set(nextTitle);
+  }
+
+  onConfirmCancel(): void {
+    this.showCancelModal.set(false);
+    this.notice.set('La cancelación quedará habilitada cuando el backend exponga el endpoint.');
+  }
+
+  onConfirmRetry(): void {
+    this.showRetryModal.set(false);
+    this.notice.set('El reintento quedará habilitado cuando el backend exponga el endpoint.');
+  }
+
+  onConfirmDelete(): void {
+    this.showDeleteModal.set(false);
+    this.notice.set('La eliminación quedará habilitada cuando el backend exponga el endpoint.');
+  }
+
+  onConfirmEditTitle(): void {
+    const currentJob = this.job();
+    const nextTitle = this.editTitleValue().trim();
+
+    if (!currentJob) {
+      this.showEditTitleModal.set(false);
+      return;
+    }
+
+    if (!nextTitle) {
+      this.notice.set('El título no puede estar vacío.');
+      return;
+    }
+
+    if (nextTitle === currentJob.title) {
+      this.showEditTitleModal.set(false);
+      return;
+    }
+
+    this.job.update((job) => {
+      if (!job) {
+        return job;
+      }
+      return {
+        ...job,
+        title: nextTitle
+      };
+    });
+
+    this.showEditTitleModal.set(false);
+    this.notice.set('Título actualizado localmente. Se persistirá cuando exista endpoint de edición.');
+  }
+
+  clearNotice(): void {
+    this.notice.set(null);
   }
 }
