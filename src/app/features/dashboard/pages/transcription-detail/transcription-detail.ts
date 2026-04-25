@@ -8,6 +8,7 @@ import { ToastService } from '../../../../core/services/toast/toast';
 import { TranscriptionDraftService } from '../../../../core/services/transcription-draft/transcription-draft';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
+import { TranscriptResponse, TranscriptTranslationSegment, TranscriptFeatureError } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { Auth } from '../../../../core/services/auth/auth';
 
@@ -49,6 +50,10 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly isLoadingTranscript = signal(false);
   readonly error = signal<string | null>(null);
+  readonly summaryContent = signal('');
+  readonly translationsMap = signal<Record<string, TranscriptTranslationSegment[]>>({});
+  readonly translationErrors = signal<TranscriptFeatureError[]>([]);
+  readonly summarizationErrors = signal<TranscriptFeatureError[]>([]);
 
   readonly showCancelModal = signal(false);
   readonly showRetryModal = signal(false);
@@ -59,6 +64,9 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   // Computed signals
   readonly hasTranscript = computed(() => !!this.transcript() && this.transcript().length > 0);
   readonly activeTranscript = computed(() => this.transcriptMode() === 'edited' ? this.editedTranscript() : this.transcript());
+  readonly hasSummary = computed(() => this.summaryContent().trim().length > 0);
+  readonly translationLanguageCodes = computed(() => Object.keys(this.translationsMap()));
+  readonly hasTranslations = computed(() => this.translationLanguageCodes().length > 0);
   readonly hasUnsavedChanges = computed(() => this.editedTranscript() !== this.transcript());
   readonly canSaveEdits = computed(() => this.hasUnsavedChanges() && this.saveStatus() !== 'saving');
   readonly saveStatusMessage = computed(() => {
@@ -202,8 +210,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
 
     this.isLoadingTranscript.set(true);
     try {
-      const transcriptText = await this.transcriptionsService.getJobTranscript(referenceId);
-      this.transcript.set(transcriptText);
+      const transcriptData = await this.transcriptionsService.getJobTranscriptData(referenceId);
+      this.applyTranscriptResponse(transcriptData);
     } catch (error) {
       console.error('Error loading transcript:', error);
       this.error.set('Error al cargar el texto de la transcripción');
@@ -348,6 +356,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   private hydrateTranscriptFromJob(job: TranscriptionJob): boolean {
+    this.hydrateInsightsFromMetadata(job.metadata);
+
     if (typeof job.transcriptionText === 'string' && job.transcriptionText.trim().length > 0) {
       this.transcript.set(job.transcriptionText);
       return true;
@@ -360,6 +370,31 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
 
     return false;
+  }
+
+  private hydrateInsightsFromMetadata(metadata: Record<string, unknown> | null): void {
+    if (!metadata || typeof metadata !== 'object') {
+      return;
+    }
+
+    const rawSummary = metadata['summary'] as { content?: string } | undefined;
+    this.summaryContent.set(typeof rawSummary?.content === 'string' ? rawSummary.content.trim() : '');
+
+    const rawTranslations = metadata['translations'];
+    if (rawTranslations && typeof rawTranslations === 'object') {
+      this.translationsMap.set(rawTranslations as Record<string, TranscriptTranslationSegment[]>);
+    }
+
+    const rawMetadata = metadata['metadata'] as Record<string, unknown> | undefined;
+    const translationErrors = Array.isArray(rawMetadata?.['translation_errors'])
+      ? rawMetadata['translation_errors'] as TranscriptFeatureError[]
+      : [];
+    const summarizationErrors = Array.isArray(rawMetadata?.['summarization_errors'])
+      ? rawMetadata['summarization_errors'] as TranscriptFeatureError[]
+      : [];
+
+    this.translationErrors.set(translationErrors);
+    this.summarizationErrors.set(summarizationErrors);
   }
 
   private extractTranscriptFromMetadata(metadata: Record<string, unknown> | null): string {
@@ -396,6 +431,20 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
 
     return text.trim();
+  }
+
+  private applyTranscriptResponse(transcriptData: TranscriptResponse): void {
+    const transcriptText = this.composeTranscriptFromResults(transcriptData.results ?? []);
+    this.transcript.set(transcriptText);
+    this.summaryContent.set(transcriptData.summary?.content?.trim() ?? '');
+    this.translationsMap.set(transcriptData.translations ?? {});
+    this.translationErrors.set(transcriptData.metadata?.translation_errors ?? []);
+    this.summarizationErrors.set(transcriptData.metadata?.summarization_errors ?? []);
+  }
+
+  getTranslationDisplay(code: string): string {
+    const segments = this.translationsMap()[code] ?? [];
+    return segments.map((segment) => segment.content).join(' ').replace(/\s+/g, ' ').trim();
   }
 
   private initializeEditableTranscript(job: TranscriptionJob, originalText: string): void {
@@ -451,6 +500,10 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.transcriptMode.set('original');
     this.transcript.set('');
     this.editedTranscript.set('');
+    this.summaryContent.set('');
+    this.translationsMap.set({});
+    this.translationErrors.set([]);
+    this.summarizationErrors.set([]);
     this.saveStatus.set('idle');
     this.lastSavedAt.set(null);
   }

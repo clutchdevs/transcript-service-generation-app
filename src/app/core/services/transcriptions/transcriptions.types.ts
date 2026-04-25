@@ -82,6 +82,19 @@ export interface TranscriptResult {
   is_eos?: boolean;
 }
 
+export interface TranscriptFeatureError {
+  type: string;
+  message: string;
+}
+
+export interface TranscriptTranslationSegment {
+  start_time?: number;
+  end_time?: number;
+  content: string;
+  speaker?: string;
+  channel?: string;
+}
+
 export interface TranscriptResponse {
   format: string;
   job: {
@@ -104,8 +117,22 @@ export interface TranscriptResponse {
       language: string;
       operating_point: string;
     };
+    translation_config?: {
+      target_languages: string[];
+    };
+    summarization_config?: {
+      content_type?: 'auto' | 'informative' | 'conversational';
+      summary_length?: 'brief' | 'detailed';
+      summary_type?: 'paragraphs' | 'bullets';
+    };
+    translation_errors?: TranscriptFeatureError[];
+    summarization_errors?: TranscriptFeatureError[];
     type: string;
   };
   results: TranscriptResult[];
+  translations?: Record<string, TranscriptTranslationSegment[]>;
+  summary?: {
+    content: string;
+  };
 }
 

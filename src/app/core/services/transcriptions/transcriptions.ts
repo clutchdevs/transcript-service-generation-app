@@ -101,18 +101,7 @@ export class Transcriptions {
    * @returns The transcript text extracted from Speechmatics format
    */
   async getJobTranscript(jobId: string): Promise<string> {
-    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB_TRANSCRIPT(jobId);
-    const response = await firstValueFrom(
-      this.api.get<TranscriptResponse>(endpoint)
-    );
-
-    // Check if response is wrapped in ApiResponse
-    let data: TranscriptResponse;
-    if ('data' in response && response.data) {
-      data = response.data as TranscriptResponse;
-    } else {
-      data = response as unknown as TranscriptResponse;
-    }
+    const data = await this.getJobTranscriptData(jobId);
 
     // Extract text from results array
     if (!data?.results || !Array.isArray(data.results)) {
@@ -139,6 +128,23 @@ export class Transcriptions {
     }
 
     return transcript.trim();
+  }
+
+  async getJobTranscriptData(jobId: string): Promise<TranscriptResponse> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB_TRANSCRIPT(jobId);
+    const response = await firstValueFrom(
+      this.api.get<TranscriptResponse>(endpoint)
+    );
+
+    // Check if response is wrapped in ApiResponse
+    let data: TranscriptResponse;
+    if ('data' in response && response.data) {
+      data = response.data as TranscriptResponse;
+    } else {
+      data = response as unknown as TranscriptResponse;
+    }
+
+    return data;
   }
 
   /**

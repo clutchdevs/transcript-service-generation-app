@@ -73,6 +73,32 @@ describe('TranscriptionDetail', () => {
           useValue: {
             listUserJobs: jest.fn().mockResolvedValue([]),
             getJobTranscript: jest.fn().mockResolvedValue(''),
+            getJobTranscriptData: jest.fn().mockResolvedValue({
+              format: '2.9',
+              job: {
+                created_at: '2026-01-01T00:00:00.000Z',
+                data_name: 'audio.mp3',
+                duration: 10,
+                id: 'ref-1',
+              },
+              metadata: {
+                created_at: '2026-01-01T00:00:01.000Z',
+                language_pack_info: {
+                  adapted: false,
+                  itn: true,
+                  language_description: 'Spanish',
+                  word_delimiter: ' ',
+                  writing_direction: 'left-to-right',
+                },
+                orchestrator_version: 'test',
+                transcription_config: {
+                  language: 'es',
+                  operating_point: 'standard',
+                },
+                type: 'transcription',
+              },
+              results: [],
+            }),
             formatFileSize: jest.fn().mockReturnValue('1 KB'),
             formatDuration: jest.fn().mockReturnValue('0:10'),
             getStatusName: jest.fn().mockReturnValue('Completado'),
@@ -270,6 +296,46 @@ describe('TranscriptionDetail', () => {
     const saveButtonAfterRestore = Array.from(fixture.nativeElement.querySelectorAll('button'))
       .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
     expect(saveButtonAfterRestore.disabled).toBe(true);
+  });
+
+  it('should render summary and translated content from transcript metadata', () => {
+    history.replaceState({
+      job: {
+        ...mockJob,
+        metadata: {
+          summary: { content: 'Resumen breve generado por Speechmatics.' },
+          translations: {
+            en: [{ content: 'Generated translated text in English.' }],
+          },
+        },
+      },
+    }, '', '/dashboard/transcriptions/test-job-id');
+
+    const secondFixture = TestBed.createComponent(TranscriptionDetail);
+    secondFixture.detectChanges();
+
+    expect(secondFixture.nativeElement.textContent).toContain('Resumen breve generado por Speechmatics.');
+    expect(secondFixture.nativeElement.textContent).toContain('Generated translated text in English.');
+  });
+
+  it('should render feature warning messages when translation or summary fail', () => {
+    history.replaceState({
+      job: {
+        ...mockJob,
+        metadata: {
+          metadata: {
+            translation_errors: [{ type: 'unsupported_translation_pair', message: 'Par de traducción no soportado.' }],
+            summarization_errors: [{ type: 'unsupported_language', message: 'Resumen no soportado para este idioma.' }],
+          },
+        },
+      },
+    }, '', '/dashboard/transcriptions/test-job-id');
+
+    const secondFixture = TestBed.createComponent(TranscriptionDetail);
+    secondFixture.detectChanges();
+
+    expect(secondFixture.nativeElement.textContent).toContain('Par de traducción no soportado.');
+    expect(secondFixture.nativeElement.textContent).toContain('Resumen no soportado para este idioma.');
   });
 });
 

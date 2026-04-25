@@ -178,6 +178,49 @@
             </div>
           }
         </div>
+
+        @if (hasSummary() || summarizationErrors().length > 0) {
+          <div class="bg-white shadow rounded-lg p-6 space-y-3">
+            <h3 class="text-lg font-semibold text-gray-900">Resumen</h3>
+
+            @if (hasSummary()) {
+              <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ summaryContent() }}</p>
+            }
+
+            @if (summarizationErrors().length > 0) {
+              @for (errorItem of summarizationErrors(); track errorItem.message) {
+                <div class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  {{ errorItem.message }}
+                </div>
+              }
+            }
+          </div>
+        }
+
+        @if (hasTranslations() || translationErrors().length > 0) {
+          <div class="bg-white shadow rounded-lg p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900">Traducciones</h3>
+
+            @if (hasTranslations()) {
+              <div class="space-y-4">
+                @for (code of translationLanguageCodes(); track code) {
+                  <div class="rounded-md border border-gray-200 p-3">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{{ code }}</p>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ getTranslationDisplay(code) }}</p>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (translationErrors().length > 0) {
+              @for (errorItem of translationErrors(); track errorItem.message) {
+                <div class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  {{ errorItem.message }}
+                </div>
+              }
+            }
+          </div>
+        }
       </div>
 
       <!-- Sidebar -->
