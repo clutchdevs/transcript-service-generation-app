@@ -13,6 +13,7 @@ export const ROUTES = {
     ROOT: '/dashboard',
     PROFILE: '/dashboard/profile',
     SETTINGS: '/dashboard/settings',
+    REALTIME: '/dashboard/realtime',
     TRANSCRIPTIONS: '/dashboard/transcriptions',
     TRANSCRIPTION_DETAIL: (id: string) => `/dashboard/transcriptions/${id}`
   },
@@ -82,6 +83,13 @@ export class NavigationService {
    */
   goToSettings(): void {
     this.router.navigate([ROUTES.DASHBOARD.SETTINGS]);
+  }
+
+  /**
+   * Navigate to realtime page
+   */
+  goToRealtime(): void {
+    this.router.navigate([ROUTES.DASHBOARD.REALTIME]);
   }
 
   /**

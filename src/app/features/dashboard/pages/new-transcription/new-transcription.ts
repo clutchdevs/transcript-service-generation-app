@@ -2,16 +2,12 @@ import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
-import { LANGUAGES, OPERATING_POINTS } from '../../../../core/integrations/speechmatics/constants';
+import { LANGUAGES, OPERATING_POINTS, TRANSLATION_TARGET_OPTIONS, SelectOption } from '../../../../core/integrations/speechmatics/constants';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { OperatingPoint, CreateJobConfig, SummaryContentType, SummaryLength, SummaryType } from '../../../../core/integrations/speechmatics/types';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
 import { Auth } from '../../../../core/services/auth/auth';
-
-interface SelectOption {
-  value: string;
-  label: string;
-}
+import { AppSettingsService, BatchDefaults } from '../../../../core/services/app-settings/app-settings';
 
 @Component({
   selector: 'app-new-transcription',
@@ -28,6 +24,7 @@ export class NewTranscription {
   private navigation = inject(NavigationService);
   private transcriptions = inject(Transcriptions);
   private auth = inject(Auth);
+  private appSettings = inject(AppSettingsService);
 
   selectedLanguage: string = 'es';
   selectedOperatingPoint: OperatingPoint = 'standard';
@@ -56,42 +53,7 @@ export class NewTranscription {
     { value: 'bullets', label: 'Viñetas' },
     { value: 'paragraphs', label: 'Párrafos' },
   ];
-  readonly translationTargetOptions: SelectOption[] = [
-    { value: 'bg', label: 'Búlgaro' },
-    { value: 'ca', label: 'Catalán' },
-    { value: 'cmn', label: 'Mandarín' },
-    { value: 'cs', label: 'Checo' },
-    { value: 'da', label: 'Danés' },
-    { value: 'de', label: 'Alemán' },
-    { value: 'el', label: 'Griego' },
-    { value: 'es', label: 'Español' },
-    { value: 'et', label: 'Estonio' },
-    { value: 'fi', label: 'Finlandés' },
-    { value: 'fr', label: 'Francés' },
-    { value: 'gl', label: 'Gallego' },
-    { value: 'hi', label: 'Hindi' },
-    { value: 'hr', label: 'Croata' },
-    { value: 'hu', label: 'Húngaro' },
-    { value: 'id', label: 'Indonesio' },
-    { value: 'it', label: 'Italiano' },
-    { value: 'ja', label: 'Japonés' },
-    { value: 'ko', label: 'Coreano' },
-    { value: 'lt', label: 'Lituano' },
-    { value: 'lv', label: 'Letón' },
-    { value: 'ms', label: 'Malayo' },
-    { value: 'nl', label: 'Neerlandés' },
-    { value: 'no', label: 'Noruego' },
-    { value: 'pl', label: 'Polaco' },
-    { value: 'pt', label: 'Portugués' },
-    { value: 'ro', label: 'Rumano' },
-    { value: 'ru', label: 'Ruso' },
-    { value: 'sk', label: 'Eslovaco' },
-    { value: 'sl', label: 'Esloveno' },
-    { value: 'sv', label: 'Sueco' },
-    { value: 'tr', label: 'Turco' },
-    { value: 'uk', label: 'Ucraniano' },
-    { value: 'vi', label: 'Vietnamita' },
-  ];
+  readonly translationTargetOptions: SelectOption[] = TRANSLATION_TARGET_OPTIONS;
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -99,6 +61,11 @@ export class NewTranscription {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   readonly confirmOpen = signal(false);
+
+  constructor() {
+    const settings = this.appSettings.load();
+    this.applyBatchDefaults(settings.batchDefaults);
+  }
 
   private isDirty(): boolean {
     return !!this.selectedFile
@@ -311,15 +278,27 @@ export class NewTranscription {
 
   onClearAll(): void {
     this.clearSelectedFileOnly();
-    this.selectedLanguage = 'es';
-    this.selectedOperatingPoint = 'standard';
-    this.isSummarizationEnabled = false;
-    this.summaryContentType = 'auto';
-    this.summaryLength = 'brief';
-    this.summaryType = 'bullets';
-    this.isTranslationEnabled = false;
-    this.selectedTargetLanguages = [];
+    const settings = this.appSettings.load();
+    this.applyBatchDefaults(settings.batchDefaults);
     this.error.set(null);
+  }
+
+  private applyBatchDefaults(batchDefaults: BatchDefaults): void {
+    this.selectedLanguage = batchDefaults.language;
+    this.selectedOperatingPoint = batchDefaults.operatingPoint;
+
+    this.isSummarizationEnabled = batchDefaults.summarization.enabled;
+    this.summaryContentType = batchDefaults.summarization.contentType;
+    this.summaryLength = batchDefaults.summarization.length;
+    this.summaryType = batchDefaults.summarization.type;
+
+    this.isTranslationEnabled = batchDefaults.translation.enabled;
+    this.selectedTargetLanguages = batchDefaults.translation.targetLanguages.filter((code) => code !== this.selectedLanguage);
+
+    if (!this.isTranslationAvailable) {
+      this.isTranslationEnabled = false;
+      this.selectedTargetLanguages = [];
+    }
   }
 
   formatBytes(bytes: number): string {

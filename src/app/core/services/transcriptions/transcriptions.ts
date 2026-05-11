@@ -10,6 +10,7 @@ import {
   TRANSCRIPTION_STATUSES,
   ListParams,
   CreateJobResponse,
+  DeleteJobResponse,
   TranscriptResponse,
 } from './transcriptions.types';
 
@@ -17,8 +18,12 @@ import {
 const TRANSCRIPTION_ENDPOINTS = {
   USER_JOBS: (userId: string) =>
     `/api/transcription/${encodeURIComponent(userId)}/jobs`,
+  JOB: (jobId: string) =>
+    `/api/transcription/jobs/${encodeURIComponent(jobId)}`,
   JOB_TRANSCRIPT: (jobId: string) =>
     `/api/transcription/jobs/${encodeURIComponent(jobId)}/transcript`,
+  JOB_CANCEL: (jobId: string) =>
+    `/api/transcription/jobs/${encodeURIComponent(jobId)}/cancel`,
 } as const;
 
 @Injectable({
@@ -51,7 +56,7 @@ export class Transcriptions {
 
     // Verificar si la respuesta es directamente un array
     if (Array.isArray(response)) {
-      return response.filter((job) => !job.isDeleted);
+      return this.normalizeJobs(response).filter((job) => !this.isDeleted(job));
     }
 
     // Si no es array, intentar acceder a la propiedad data
@@ -59,10 +64,19 @@ export class Transcriptions {
 
     if (Array.isArray(data)) {
       // Filtrar transcripciones no eliminadas
-      return data.filter((job) => !job.isDeleted);
+      return this.normalizeJobs(data).filter((job) => !this.isDeleted(job));
     }
 
     return [];
+  }
+
+  async getJobById(jobId: string): Promise<TranscriptionJob> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB(jobId);
+    const response = await firstValueFrom(
+      this.api.get<TranscriptionJob>(endpoint)
+    );
+
+    return this.unwrapJobResponse(response);
   }
 
   /**
@@ -77,7 +91,6 @@ export class Transcriptions {
     file: File
   ): Promise<CreateJobResponse> {
     const formData = new FormData();
-    formData.append('userId', userId);
     formData.append('config', JSON.stringify(config));
     formData.append('audioFile', file, file.name);
 
@@ -87,12 +100,41 @@ export class Transcriptions {
     );
 
     // Support both wrapped and raw responses
+    void userId;
     const data = (response as ApiResponse<CreateJobResponse>).data;
     if (data !== undefined) {
-      return data;
+      return this.normalizeJob(data) as CreateJobResponse;
     }
     // If response is not wrapped, assume it's the job data directly
-    return response as unknown as CreateJobResponse;
+    return this.normalizeJob(response as unknown as CreateJobResponse) as CreateJobResponse;
+  }
+
+  async deleteJob(jobId: string): Promise<DeleteJobResponse> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB(jobId);
+    const response = await firstValueFrom(
+      this.api.delete<DeleteJobResponse>(endpoint)
+    );
+
+    const data = (response as ApiResponse<DeleteJobResponse>).data;
+    return data ?? (response as unknown as DeleteJobResponse);
+  }
+
+  async updateJobTitle(jobId: string, title: string): Promise<TranscriptionJob> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB(jobId);
+    const response = await firstValueFrom(
+      this.api.patch<TranscriptionJob>(endpoint, { title })
+    );
+
+    return this.unwrapJobResponse(response);
+  }
+
+  async cancelJob(jobId: string): Promise<TranscriptionJob> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB_CANCEL(jobId);
+    const response = await firstValueFrom(
+      this.api.post<TranscriptionJob>(endpoint, {})
+    );
+
+    return this.unwrapJobResponse(response);
   }
 
   /**
@@ -158,8 +200,9 @@ export class Transcriptions {
   /**
    * Format file size from bytes to human readable
    */
-  formatFileSize(bytes: string): string {
-    const size = parseInt(bytes);
+  formatFileSize(bytes: string | number): string {
+    const size = typeof bytes === 'number' ? bytes : parseInt(bytes, 10);
+    if (!Number.isFinite(size)) return '0 B';
     if (size === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -190,5 +233,26 @@ export class Transcriptions {
     // Buscar en la lista de idiomas de Speechmatics
     const language = LANGUAGES.find(lang => lang.value === languageCode);
     return language?.label || languageCode.toUpperCase();
+  }
+
+  private unwrapJobResponse(response: ApiResponse<TranscriptionJob> | TranscriptionJob): TranscriptionJob {
+    const data = (response as ApiResponse<TranscriptionJob>).data;
+    return this.normalizeJob(data ?? (response as TranscriptionJob));
+  }
+
+  private normalizeJobs(jobs: TranscriptionJob[]): TranscriptionJob[] {
+    return jobs.map((job) => this.normalizeJob(job));
+  }
+
+  private normalizeJob<T extends { fileSize: string | number; isDeleted?: boolean; deletedAt?: string | null }>(job: T): T {
+    return {
+      ...job,
+      isDeleted: job.isDeleted ?? Boolean(job.deletedAt),
+      fileSize: typeof job.fileSize === 'number' ? String(job.fileSize) : job.fileSize,
+    };
+  }
+
+  private isDeleted(job: TranscriptionJob): boolean {
+    return Boolean(job.isDeleted || job.deletedAt);
   }
 }

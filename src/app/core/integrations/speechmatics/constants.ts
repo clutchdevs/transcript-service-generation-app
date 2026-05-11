@@ -6,6 +6,7 @@ export const OPERATING_POINTS: { label: string; value: OperatingPoint }[] = [
 ];
 
 export interface LanguageOption { label: string; value: LanguageCode }
+export interface SelectOption { label: string; value: string }
 
 export const LANGUAGES: LanguageOption[] = [
   { label: 'Automático', value: 'auto' },
@@ -68,6 +69,43 @@ export const LANGUAGES: LanguageOption[] = [
   { label: 'Uigur', value: 'ug' },
   { label: 'Vietnamita', value: 'vi' },
   { label: 'Galés', value: 'cy' },
+];
+
+export const TRANSLATION_TARGET_OPTIONS: SelectOption[] = [
+  { value: 'bg', label: 'Búlgaro' },
+  { value: 'ca', label: 'Catalán' },
+  { value: 'cmn', label: 'Mandarín' },
+  { value: 'cs', label: 'Checo' },
+  { value: 'da', label: 'Danés' },
+  { value: 'de', label: 'Alemán' },
+  { value: 'el', label: 'Griego' },
+  { value: 'es', label: 'Español' },
+  { value: 'et', label: 'Estonio' },
+  { value: 'fi', label: 'Finlandés' },
+  { value: 'fr', label: 'Francés' },
+  { value: 'gl', label: 'Gallego' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'hr', label: 'Croata' },
+  { value: 'hu', label: 'Húngaro' },
+  { value: 'id', label: 'Indonesio' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ja', label: 'Japonés' },
+  { value: 'ko', label: 'Coreano' },
+  { value: 'lt', label: 'Lituano' },
+  { value: 'lv', label: 'Letón' },
+  { value: 'ms', label: 'Malayo' },
+  { value: 'nl', label: 'Neerlandés' },
+  { value: 'no', label: 'Noruego' },
+  { value: 'pl', label: 'Polaco' },
+  { value: 'pt', label: 'Portugués' },
+  { value: 'ro', label: 'Rumano' },
+  { value: 'ru', label: 'Ruso' },
+  { value: 'sk', label: 'Eslovaco' },
+  { value: 'sl', label: 'Esloveno' },
+  { value: 'sv', label: 'Sueco' },
+  { value: 'tr', label: 'Turco' },
+  { value: 'uk', label: 'Ucraniano' },
+  { value: 'vi', label: 'Vietnamita' },
 ];
 
 

@@ -147,6 +147,7 @@ export class Api {
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred';
+    let userMessage = 'Ocurrió un error al procesar la solicitud.';
 
     if (error.error instanceof ErrorEvent) {
       // Client-side error
@@ -160,6 +161,23 @@ export class Api {
       }
     }
 
+    if (error.status === 0) {
+      const rawMessage = `${error.message || ''} ${errorMessage}`.toLowerCase();
+      const hasCertIssue = rawMessage.includes('err_cert') || rawMessage.includes('cert') || rawMessage.includes('ssl');
+
+      userMessage = hasCertIssue
+        ? 'No se pudo establecer una conexión segura con el servidor. Verifica el certificado SSL del API.'
+        : 'No se pudo conectar con el servidor. Verifica tu conexión y la URL del API.';
+    } else if (error.status >= 500) {
+      userMessage = 'Error del servidor. Inténtalo más tarde.';
+    } else if (error.status === 429) {
+      userMessage = 'Demasiadas solicitudes. Inténtalo nuevamente en unos segundos.';
+    } else if (error.status === 404) {
+      userMessage = 'No se encontró el recurso solicitado.';
+    } else if (error.status === 400) {
+      userMessage = 'La solicitud no es válida. Revisa los datos enviados.';
+    }
+
     // Extract validation issues if present (e.g., ZodError format)
     const errorBody = error.error as { error?: { issues?: unknown }; issues?: unknown } | null;
     const issues = errorBody?.error?.issues || errorBody?.issues;
@@ -168,6 +186,7 @@ export class Api {
     return throwError(() => ({
       isApiError: true,
       message: errorMessage,
+      userMessage,
       status: error.status,
       issues,
       raw: error.error

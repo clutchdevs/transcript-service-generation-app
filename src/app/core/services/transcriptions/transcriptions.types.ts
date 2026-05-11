@@ -10,19 +10,19 @@ export interface TranscriptionJob {
   referenceId: string;
   title: string;
   originalFilename: string;
-  filePath: string;
-  fileSize: string;
+  filePath?: string;
+  fileSize: string | number;
   durationSeconds: number;
   language: string;
   statusId: number;
-  transcriptionText: string | null;
-  confidenceScore: number | null;
-  wordCount: number | null;
-  processingStartedAt: string | null;
-  processingCompletedAt: string | null;
+  transcriptionText?: string | null;
+  confidenceScore?: number | null;
+  wordCount?: number | null;
+  processingStartedAt?: string | null;
+  processingCompletedAt?: string | null;
   errorMessage: string | null;
   metadata: Record<string, unknown> | null;
-  isDeleted: boolean;
+  isDeleted?: boolean;
   deletedAt: string | null;
 }
 
@@ -33,10 +33,24 @@ export interface TranscriptionStatus {
 }
 
 export const TRANSCRIPTION_STATUSES: TranscriptionStatus[] = [
+  { id: 1, name: 'OK', description: 'Transcripción aceptada' },
   { id: 2, name: 'Pendiente', description: 'Transcripción pendiente' },
   { id: 3, name: 'Completado', description: 'Transcripción completada' },
   { id: 4, name: 'Error', description: 'Error en la transcripción' },
+  { id: 5, name: 'Cancelado', description: 'Transcripción cancelada' },
 ];
+
+export const TRANSCRIPTION_STATUS_IDS = {
+  OK: 1,
+  PENDING: 2,
+  DONE: 3,
+  FAILED: 4,
+  CANCELED: 5,
+} as const;
+
+export type DeleteJobResponse = {
+  jobId: string;
+};
 
 export interface ListParams {
   page?: number;

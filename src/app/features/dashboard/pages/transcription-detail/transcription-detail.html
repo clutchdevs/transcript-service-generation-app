@@ -172,6 +172,14 @@
                 <p class="text-sm text-gray-600">Ocurrió un error al procesar la transcripción.</p>
               }
             </div>
+          } @else if (isCanceled()) {
+            <div class="text-center py-8 text-gray-500">
+              <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 015.636 5.636m12.728 12.728A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path>
+              </svg>
+              <p class="text-lg font-medium mb-2">Transcripción cancelada</p>
+              <p class="text-sm text-gray-600">Este job fue cancelado y no generará una transcripción.</p>
+            </div>
           } @else {
             <div class="text-center py-8 text-gray-500">
               <p class="text-sm">No hay transcripción disponible</p>
@@ -264,18 +272,16 @@
                 </app-button>
               </div>
             }
-            @if (isCompleted()) {
-              <div>
-                <app-button
-                  variant="secondary"
-                  size="md"
-                  [fullWidth]="true"
-                  (clicked)="editTitle()"
-                >
-                  Editar título
-                </app-button>
-              </div>
-            }
+            <div>
+              <app-button
+                variant="secondary"
+                size="md"
+                [fullWidth]="true"
+                (clicked)="editTitle()"
+              >
+                Editar título
+              </app-button>
+            </div>
             <div>
               <app-button
                 variant="ghost"
@@ -303,7 +309,9 @@
                       [class.bg-green-100]="currentJob.statusId === 3"
                       [class.text-green-800]="currentJob.statusId === 3"
                       [class.bg-red-100]="currentJob.statusId === 4"
-                      [class.text-red-800]="currentJob.statusId === 4">
+                      [class.text-red-800]="currentJob.statusId === 4"
+                      [class.bg-gray-100]="currentJob.statusId === 5"
+                      [class.text-gray-800]="currentJob.statusId === 5">
                   {{ getStatusName(currentJob.statusId) }}
                 </span>
               </dd>
@@ -374,11 +382,11 @@
   (closed)="onCloseCancelModal()"
 >
   <p class="text-gray-700">
-    Esta acción estará disponible cuando el backend exponga el endpoint de cancelación.
+    Esta acción cancelará el procesamiento pendiente. Si Speechmatics termina después, el backend conservará el estado cancelado.
   </p>
   <div modal-footer class="flex gap-3">
     <app-button variant="secondary" (clicked)="onCloseCancelModal()">Cerrar</app-button>
-    <app-button variant="primary" (clicked)="onConfirmCancel()">Entendido</app-button>
+    <app-button variant="danger" (clicked)="onConfirmCancel()">Cancelar transcripción</app-button>
   </div>
 </app-modal>
 
@@ -404,11 +412,11 @@
   (closed)="onCloseDeleteModal()"
 >
   <p class="text-gray-700">
-    Esta acción estará disponible cuando el backend exponga el endpoint de eliminación.
+    Esta acción eliminará la transcripción del listado. No podrás verla nuevamente desde el dashboard.
   </p>
   <div modal-footer class="flex gap-3">
     <app-button variant="secondary" (clicked)="onCloseDeleteModal()">Cerrar</app-button>
-    <app-button variant="danger" (clicked)="onConfirmDelete()">Entendido</app-button>
+    <app-button variant="danger" (clicked)="onConfirmDelete()">Eliminar</app-button>
   </div>
 </app-modal>
 

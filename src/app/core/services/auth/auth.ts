@@ -63,6 +63,7 @@ interface ValidationIssue {
 interface ApiThrownError {
   isApiError?: boolean;
   message: string;
+  userMessage?: string;
   status?: number;
   issues?: ValidationIssue[];
 }
@@ -148,20 +149,44 @@ export class Auth {
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
-        const friendly = 'Correo o contraseña incorrectos';
+        const friendly = response?.error || 'Correo o contraseña incorrectos';
         this.setError(friendly);
         throw new Error(friendly);
       }
     } catch (error: unknown) {
-      const status: number | undefined = (error as ApiThrownError)?.status;
-      const friendly = status && status >= 500
-        ? 'Error del servidor. Inténtalo más tarde.'
-        : 'Correo o contraseña incorrectos';
+      const friendly = this.getLoginErrorMessage(error);
       this.setError(friendly);
       throw new Error(friendly); // Re-throw to let component handle it
     } finally {
       this.updateLoading(false);
     }
+  }
+
+  private getLoginErrorMessage(error: unknown): string {
+    const apiError = error as ApiThrownError | undefined;
+    const status = apiError?.status;
+    const message = (apiError?.message || '').toLowerCase();
+
+    if (apiError?.userMessage && status !== 401 && status !== 403) {
+      return apiError.userMessage;
+    }
+
+    if (status === 401 || status === 403) {
+      return 'Correo o contraseña incorrectos';
+    }
+
+    if (status === 0) {
+      if (message.includes('cert') || message.includes('ssl') || message.includes('err_cert')) {
+        return 'No se pudo establecer una conexión segura con el servidor. Verifica el certificado SSL del API.';
+      }
+      return 'No se pudo conectar con el servidor. Verifica tu conexión y la URL del API.';
+    }
+
+    if (status && status >= 500) {
+      return 'Error del servidor. Inténtalo más tarde.';
+    }
+
+    return apiError?.message || 'No se pudo iniciar sesión. Inténtalo de nuevo.';
   }
 
   /**

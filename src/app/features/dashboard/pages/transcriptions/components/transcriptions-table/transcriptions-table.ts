@@ -19,7 +19,7 @@ export class TranscriptionsTable {
   @Output() viewJob = new EventEmitter<TranscriptionJob>();
   @Output() deleteJob = new EventEmitter<TranscriptionJob>();
 
-  formatFileSize(bytes: string): string {
+  formatFileSize(bytes: string | number): string {
     return this.transcriptionsService.formatFileSize(bytes);
   }
 

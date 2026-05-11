@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { STORAGE_KEYS } from '../../../../core/constants/storage';
+import { TranscriptionEventsCoordinatorService } from '../../../../core/services/transcription-events/transcription-events-coordinator';
 import { Header } from '../../components/header/header';
 import { Sidenav } from '../../components/sidenav/sidenav';
 import { SidenavItemData } from '../../components/sidenav/sidenav-item/sidenav-item';
@@ -19,6 +20,7 @@ export class Home {
   private auth = inject(Auth);
   private router = inject(Router);
   private navigation = inject(NavigationService);
+  private transcriptionEvents = inject(TranscriptionEventsCoordinatorService);
 
   // Computed signals for reactive UI
   readonly user = computed(() => this.auth.user());
@@ -51,6 +53,12 @@ export class Home {
       label: 'Configuración',
       icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
       route: '/dashboard/settings'
+    },
+    {
+      id: 'realtime',
+      label: 'Realtime',
+      icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14m-9 4h5a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z',
+      route: '/dashboard/realtime'
     }
   ];
 
@@ -66,6 +74,15 @@ export class Home {
         this.auth.ensureProfile();
       }
     });
+
+    effect(() => {
+      const userId = this.user()?.id;
+      if (userId) {
+        void this.transcriptionEvents.start(userId);
+      } else {
+        this.transcriptionEvents.stop();
+      }
+    });
   }
 
   async logout(): Promise<void> {
@@ -76,6 +93,7 @@ export class Home {
     } finally {
       // Clear persisted UI state so a new user doesn't inherit it
       localStorage.removeItem(STORAGE_KEYS.UI_SIDENAV_COLLAPSED);
+      this.transcriptionEvents.stop();
       this.router.navigate(['/auth']);
     }
   }

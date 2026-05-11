@@ -1,6 +1,170 @@
-<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-  <h1 class="text-xl font-semibold text-gray-900">Configuracion</h1>
-  <p class="mt-2 text-sm text-gray-600">
-    Esta seccion esta preparada para configurar preferencias de cuenta y aplicacion.
-  </p>
-</section>
+<div class="space-y-6">
+  <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <h1 class="text-xl font-semibold text-gray-900">Configuracion</h1>
+    <p class="mt-2 text-sm text-gray-600">
+      Define preferencias por defecto para crear jobs, editar transcripciones y preparar el modulo realtime.
+    </p>
+  </section>
+
+  <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900">Defaults de transcripcion</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Idioma por defecto</label>
+        <select
+          class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          [(ngModel)]="settings.batchDefaults.language"
+        >
+          @for (opt of languages; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Modelo por defecto</label>
+        <select
+          class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          [(ngModel)]="settings.batchDefaults.operatingPoint"
+        >
+          @for (opt of operatingPoints; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+      <label class="flex items-center gap-2 text-sm font-medium text-gray-800">
+        <input type="checkbox" [(ngModel)]="settings.batchDefaults.summarization.enabled" />
+        Habilitar resumen por defecto
+      </label>
+
+      @if (settings.batchDefaults.summarization.enabled) {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+            <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.batchDefaults.summarization.contentType">
+              <option value="auto">Automatico</option>
+              <option value="conversational">Conversacional</option>
+              <option value="informative">Informativo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Longitud</label>
+            <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.batchDefaults.summarization.length">
+              <option value="brief">Breve</option>
+              <option value="detailed">Detallado</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Formato</label>
+            <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.batchDefaults.summarization.type">
+              <option value="bullets">Vinetas</option>
+              <option value="paragraphs">Parrafos</option>
+            </select>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+      <label class="flex items-center gap-2 text-sm font-medium text-gray-800">
+        <input type="checkbox" [(ngModel)]="settings.batchDefaults.translation.enabled" />
+        Habilitar traduccion por defecto
+      </label>
+
+      @if (settings.batchDefaults.translation.enabled) {
+        <div class="space-y-2">
+          <p class="text-xs text-gray-500">Idiomas destino por defecto (maximo 5)</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+            @for (opt of translationTargetOptions; track opt.value) {
+              <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  [value]="opt.value"
+                  [checked]="isTargetLanguageSelected(opt.value)"
+                  [disabled]="isTargetLanguageDisabled(opt.value)"
+                  (change)="onTranslationTargetToggle($event)"
+                />
+                <span>{{ opt.label }} ({{ opt.value }})</span>
+              </label>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900">Defaults del editor</h2>
+    <label class="flex items-center gap-2 text-sm text-gray-800">
+      <input type="checkbox" [(ngModel)]="settings.editorDefaults.autosaveEnabled" />
+      Autosave habilitado
+    </label>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Debounce autosave</label>
+        <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.editorDefaults.autosaveDebounceMs">
+          @for (opt of autosaveDebounceOptions; track opt.value) {
+            <option [ngValue]="+opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex items-end">
+        <label class="flex items-center gap-2 text-sm text-gray-800">
+          <input type="checkbox" [(ngModel)]="settings.editorDefaults.startInEditableMode" />
+          Abrir detalle en modo editable
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900">Defaults de realtime (preparacion)</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Region preferida</label>
+        <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.realtimeDefaults.region">
+          <option value="eu">EU</option>
+          <option value="us">US</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Max delay</label>
+        <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.realtimeDefaults.maxDelay">
+          <option [ngValue]="0.7">0.7s</option>
+          <option [ngValue]="1">1s</option>
+          <option [ngValue]="2">2s</option>
+          <option [ngValue]="4">4s</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label class="flex items-center gap-2 text-sm text-gray-800">
+        <input type="checkbox" [(ngModel)]="settings.realtimeDefaults.enablePartials" />
+        Recibir parciales por defecto
+      </label>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Diarizacion</label>
+        <select class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" [(ngModel)]="settings.realtimeDefaults.diarization">
+          <option value="none">Ninguna</option>
+          <option value="speaker">Por hablante</option>
+          <option value="channel">Por canal</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-wrap justify-end gap-3">
+      <app-button variant="secondary" (clicked)="onReset()">Restablecer defaults</app-button>
+      <app-button variant="primary" (clicked)="onSave()">Guardar preferencias</app-button>
+    </div>
+  </section>
+</div>

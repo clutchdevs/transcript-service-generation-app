@@ -52,7 +52,9 @@
                     [class.bg-green-100]="job.statusId === 3"
                     [class.text-green-800]="job.statusId === 3"
                     [class.bg-red-100]="job.statusId === 4"
-                    [class.text-red-800]="job.statusId === 4">
+                    [class.text-red-800]="job.statusId === 4"
+                    [class.bg-gray-100]="job.statusId === 5"
+                    [class.text-gray-800]="job.statusId === 5">
                 {{ getStatusName(job.statusId) }}
               </span>
             </td>

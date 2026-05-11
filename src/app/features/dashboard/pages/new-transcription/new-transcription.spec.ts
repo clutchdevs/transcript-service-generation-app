@@ -4,6 +4,7 @@ import { NewTranscription } from './new-transcription';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
 import { Auth } from '../../../../core/services/auth/auth';
+import { AppSettingsService, DEFAULT_APP_SETTINGS } from '../../../../core/services/app-settings/app-settings';
 
 describe('NewTranscription', () => {
   let component: NewTranscription;
@@ -15,8 +16,13 @@ describe('NewTranscription', () => {
     navigate: jest.Mock;
     goToDashboard: jest.Mock;
   };
+  let appSettingsMock: {
+    load: jest.Mock;
+  };
 
   beforeEach(async () => {
+    localStorage.clear();
+
     transcriptionsMock = {
       createJob: jest.fn().mockResolvedValue({ id: 'job-1' }),
     };
@@ -24,6 +30,10 @@ describe('NewTranscription', () => {
     navigationMock = {
       navigate: jest.fn(),
       goToDashboard: jest.fn(),
+    };
+
+    appSettingsMock = {
+      load: jest.fn().mockReturnValue(DEFAULT_APP_SETTINGS),
     };
 
     await TestBed.configureTestingModule({
@@ -42,6 +52,10 @@ describe('NewTranscription', () => {
           useValue: {
             user: jest.fn().mockReturnValue({ id: 'user-1', email: 'test@example.com' }),
           },
+        },
+        {
+          provide: AppSettingsService,
+          useValue: appSettingsMock,
         },
       ]
     })
@@ -111,5 +125,31 @@ describe('NewTranscription', () => {
 
     expect(component.isTranslationEnabled).toBe(false);
     expect(component.selectedTargetLanguages).toEqual([]);
+  });
+
+  it('should initialize with defaults from settings service', () => {
+    appSettingsMock.load.mockReturnValue({
+      ...DEFAULT_APP_SETTINGS,
+      batchDefaults: {
+        ...DEFAULT_APP_SETTINGS.batchDefaults,
+        language: 'en',
+        operatingPoint: 'enhanced',
+        summarization: {
+          enabled: true,
+          contentType: 'informative',
+          length: 'detailed',
+          type: 'paragraphs',
+        },
+      },
+    });
+
+    const secondFixture = TestBed.createComponent(NewTranscription);
+    const secondComponent = secondFixture.componentInstance;
+    secondFixture.detectChanges();
+
+    expect(secondComponent.selectedLanguage).toBe('en');
+    expect(secondComponent.selectedOperatingPoint).toBe('enhanced');
+    expect(secondComponent.isSummarizationEnabled).toBe(true);
+    expect(secondComponent.summaryType).toBe('paragraphs');
   });
 });

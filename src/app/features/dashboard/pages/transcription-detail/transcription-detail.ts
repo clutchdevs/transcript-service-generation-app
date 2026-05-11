@@ -1,6 +1,6 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
@@ -10,7 +10,7 @@ import { Transcriptions as TranscriptionsService } from '../../../../core/servic
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { TranscriptResponse, TranscriptTranslationSegment, TranscriptFeatureError } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
-import { Auth } from '../../../../core/services/auth/auth';
+import { TranscriptionEventsCoordinatorService } from '../../../../core/services/transcription-events/transcription-events-coordinator';
 
 interface TranscriptResultLike {
   type?: 'word' | 'punctuation' | string;
@@ -29,12 +29,11 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   private readonly AUTOSAVE_DEBOUNCE_MS = 1500;
 
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private transcriptionsService = inject(TranscriptionsService);
   private navigation = inject(NavigationService);
-  private auth = inject(Auth);
   private toast = inject(ToastService);
   private draftService = inject(TranscriptionDraftService);
+  private transcriptionEvents = inject(TranscriptionEventsCoordinatorService);
   private destroy$ = new Subject<void>();
   private autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
   private relativeTimeInterval: ReturnType<typeof setInterval> | null = null;
@@ -132,6 +131,35 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly isCompleted = computed(() => this.job()?.statusId === 3);
   readonly isPending = computed(() => this.job()?.statusId === 2);
   readonly hasError = computed(() => this.job()?.statusId === 4);
+  readonly isCanceled = computed(() => this.job()?.statusId === 5);
+
+  constructor() {
+    effect(() => {
+      const event = this.transcriptionEvents.lastEvent();
+      const currentJob = this.job();
+      if (!event || !currentJob) {
+        return;
+      }
+
+      const matchesCurrentJob = event.jobId === currentJob.id || event.transcriptionId === currentJob.referenceId;
+      if (!matchesCurrentJob) {
+        return;
+      }
+
+      if (event.type === 'deleted') {
+        this.toast.info('Esta transcripción fue eliminada.');
+        this.goBack();
+        return;
+      }
+
+      if (event.type === 'completed') {
+        void this.loadJob(currentJob.id);
+        return;
+      }
+
+      void this.loadJob(currentJob.id);
+    });
+  }
 
   ngOnInit(): void {
     this.relativeTimeInterval = setInterval(() => {
@@ -145,16 +173,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
         const jobId = params['id'];
         if (jobId) {
           this.resetTranscriptState();
-          const stateJob = this.getJobFromNavigationState(jobId);
-
-          if (stateJob) {
-            this.error.set(null);
-            this.isLoading.set(false);
-            this.job.set(stateJob);
-            await this.loadTranscriptIfNeeded(stateJob);
-            return;
-          }
-
           await this.loadJob(jobId);
         } else {
           this.error.set('ID de transcripción no válido');
@@ -178,23 +196,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.resetTranscriptState();
 
     try {
-      // Obtener el usuario actual para cargar los jobs
-      const user = this.auth.user();
-      if (!user?.id) {
-        this.error.set('Usuario no autenticado');
-        this.navigation.goToDashboard();
-        return;
-      }
-
-      // Cargar todos los jobs del usuario y buscar el que coincide
-      const jobs = await this.transcriptionsService.listUserJobs(user.id);
-      const foundJob = jobs.find(job => job.id === jobId || job.referenceId === jobId);
-
-      if (!foundJob) {
-        this.error.set('Transcripción no encontrada');
-        return;
-      }
-
+      const foundJob = await this.transcriptionsService.getJobById(jobId);
       this.job.set(foundJob);
       await this.loadTranscriptIfNeeded(foundJob);
     } catch (error) {
@@ -258,7 +260,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.navigation.navigate('/dashboard/transcriptions');
   }
 
-  formatFileSize(bytes: string): string {
+  formatFileSize(bytes: string | number): string {
     return this.transcriptionsService.formatFileSize(bytes);
   }
 
@@ -322,22 +324,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
         this.toast.success('Estado actualizado correctamente.');
       }
     }
-  }
-
-  private getJobFromNavigationState(jobId: string): TranscriptionJob | null {
-    const navigationState = this.router.getCurrentNavigation()?.extras?.state?.['job'] as TranscriptionJob | undefined;
-    const historyStateJob = (history.state as { job?: TranscriptionJob } | null)?.job;
-    const candidate = navigationState ?? historyStateJob;
-
-    if (!candidate) {
-      return null;
-    }
-
-    if (candidate.id === jobId || candidate.referenceId === jobId) {
-      return candidate;
-    }
-
-    return null;
   }
 
   private async loadTranscriptIfNeeded(job: TranscriptionJob): Promise<void> {
@@ -567,9 +553,23 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.editTitleValue.set(nextTitle);
   }
 
-  onConfirmCancel(): void {
-    this.showCancelModal.set(false);
-    this.toast.info('La opción de cancelar estará disponible cuando backend habilite el endpoint.');
+  async onConfirmCancel(): Promise<void> {
+    const currentJob = this.job();
+
+    if (!currentJob) {
+      this.showCancelModal.set(false);
+      return;
+    }
+
+    try {
+      const canceledJob = await this.transcriptionsService.cancelJob(currentJob.id);
+      this.job.set(canceledJob);
+      this.showCancelModal.set(false);
+      this.toast.success('Transcripción cancelada.');
+    } catch (error) {
+      console.error('Error canceling job:', error);
+      this.toast.error('No pudimos cancelar la transcripción.');
+    }
   }
 
   onConfirmRetry(): void {
@@ -577,12 +577,26 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.toast.info('La opción de reintento estará disponible cuando backend habilite el endpoint.');
   }
 
-  onConfirmDelete(): void {
-    this.showDeleteModal.set(false);
-    this.toast.info('La eliminación estará disponible cuando backend habilite el endpoint.');
+  async onConfirmDelete(): Promise<void> {
+    const currentJob = this.job();
+
+    if (!currentJob) {
+      this.showDeleteModal.set(false);
+      return;
+    }
+
+    try {
+      await this.transcriptionsService.deleteJob(currentJob.id);
+      this.showDeleteModal.set(false);
+      this.toast.success('Transcripción eliminada.');
+      this.goBack();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      this.toast.error('No pudimos eliminar la transcripción.');
+    }
   }
 
-  onConfirmEditTitle(): void {
+  async onConfirmEditTitle(): Promise<void> {
     const currentJob = this.job();
     const nextTitle = this.editTitleValue().trim();
 
@@ -601,17 +615,14 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       return;
     }
 
-    this.job.update((job) => {
-      if (!job) {
-        return job;
-      }
-      return {
-        ...job,
-        title: nextTitle
-      };
-    });
-
-    this.showEditTitleModal.set(false);
-    this.toast.success('Título actualizado localmente. Se guardará en servidor cuando exista el endpoint.');
+    try {
+      const updatedJob = await this.transcriptionsService.updateJobTitle(currentJob.id, nextTitle);
+      this.job.set(updatedJob);
+      this.showEditTitleModal.set(false);
+      this.toast.success('Título actualizado.');
+    } catch (error) {
+      console.error('Error updating title:', error);
+      this.toast.error('No pudimos actualizar el título.');
+    }
   }
 }

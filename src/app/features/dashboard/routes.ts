@@ -27,6 +27,10 @@ export const dashboardRoutes: Routes = [
         loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),
       },
       {
+        path: 'realtime',
+        loadComponent: () => import('./pages/realtime/realtime').then((m) => m.Realtime),
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
       }

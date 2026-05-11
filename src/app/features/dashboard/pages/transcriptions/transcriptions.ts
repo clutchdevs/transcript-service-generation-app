@@ -8,9 +8,11 @@ import { Transcriptions as TranscriptionsService } from '../../../../core/servic
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
 import { Auth } from '../../../../core/services/auth/auth';
 import { NavigationService, ROUTES } from '../../../../core/services/navigation/navigation';
+import { TranscriptionEventsCoordinatorService } from '../../../../core/services/transcription-events/transcription-events-coordinator';
 import { LANGUAGES } from '../../../../core/integrations/speechmatics/constants';
 import { SelectOption } from '../../../../shared/components/ui/select/select';
 import { Router } from '@angular/router';
+import { ToastService } from '../../../../core/services/toast/toast';
 
 @Component({
   selector: 'app-transcriptions',
@@ -23,6 +25,8 @@ export class Transcriptions implements OnInit {
   private auth = inject(Auth);
   private navigation = inject(NavigationService);
   private router = inject(Router);
+  private transcriptionEvents = inject(TranscriptionEventsCoordinatorService);
+  private toast = inject(ToastService);
 
   // Signals para el estado
   readonly jobs = signal<TranscriptionJob[]>([]);
@@ -45,7 +49,8 @@ export class Transcriptions implements OnInit {
     { label: 'Todos los estados', value: 'all' },
     { label: 'Pendiente', value: 'pendiente' },
     { label: 'Completado', value: 'completado' },
-    { label: 'Error', value: 'error' }
+    { label: 'Error', value: 'error' },
+    { label: 'Cancelado', value: 'cancelado' }
   ];
 
   readonly languageOptions: SelectOption[] = [
@@ -90,6 +95,20 @@ export class Transcriptions implements OnInit {
         this.loadJobs();
       }
     });
+
+    effect(() => {
+      const event = this.transcriptionEvents.lastEvent();
+      if (!event) {
+        return;
+      }
+
+      if (event.type === 'deleted') {
+        this.jobs.update((jobs) => jobs.filter((job) => job.id !== event.jobId));
+        return;
+      }
+
+      this.refreshJobs();
+    });
   }
 
   ngOnInit(): void {
@@ -121,6 +140,9 @@ export class Transcriptions implements OnInit {
       const jobs = await this.transcriptionsService.listUserJobs(user.id);
       console.log('Jobs loaded:', jobs);
       this.jobs.set(jobs);
+      if (jobs.some((job) => job.statusId === 2)) {
+        this.transcriptionEvents.ensurePollingFallbackForPendingJobs();
+      }
       this.hasLoadedInitialData = true; // Marcar que ya se cargaron los datos iniciales
     } catch (error) {
       console.error('Error loading jobs:', error);
@@ -162,16 +184,19 @@ export class Transcriptions implements OnInit {
     this.showDeleteModal.set(true);
   }
 
-  onConfirmDelete(): void {
+  async onConfirmDelete(): Promise<void> {
     const job = this.jobToDelete();
     if (job) {
-      console.log('Eliminando transcripción:', job);
-      // TODO: Implementar eliminación de transcripción en el backend
-      // Por ahora solo removemos del array local
-      const currentJobs = this.jobs();
-      const updatedJobs = currentJobs.filter(j => j.id !== job.id);
-      this.jobs.set(updatedJobs);
-      console.log('Transcripción eliminada localmente:', job.id);
+      try {
+        await this.transcriptionsService.deleteJob(job.id);
+        const currentJobs = this.jobs();
+        const updatedJobs = currentJobs.filter(j => j.id !== job.id);
+        this.jobs.set(updatedJobs);
+        this.toast.success('Transcripción eliminada.');
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        this.toast.error('No pudimos eliminar la transcripción.');
+      }
     }
     this.onCloseDeleteModal();
   }
