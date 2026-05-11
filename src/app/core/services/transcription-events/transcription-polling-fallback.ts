@@ -15,11 +15,26 @@ export class TranscriptionPollingFallbackService {
 
   readonly events$ = new Subject<TranscriptionRealtimeEvent>();
 
-  start(userId: string): void {
-    if (this.currentUserId === userId && this.intervalId) {
+  seedKnownJobs(jobs: TranscriptionJob[]): void {
+    if (!this.currentUserId) {
       return;
     }
 
+    this.knownJobs = new Map(jobs.map((job) => [job.id, job]));
+    console.debug('[PollingFallback] seed known jobs', jobs.map((job) => ({
+      id: job.id,
+      referenceId: job.referenceId,
+      statusId: job.statusId,
+    })));
+  }
+
+  start(userId: string): void {
+    if (this.currentUserId === userId && this.intervalId) {
+      console.debug('[PollingFallback] already running', { userId });
+      return;
+    }
+
+    console.debug('[PollingFallback] start', { userId, intervalMs: this.POLLING_INTERVAL_MS });
     this.stop();
     this.currentUserId = userId;
     void this.pollOnce();
@@ -27,6 +42,9 @@ export class TranscriptionPollingFallbackService {
   }
 
   stop(): void {
+    if (this.currentUserId) {
+      console.debug('[PollingFallback] stop', { userId: this.currentUserId });
+    }
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -45,6 +63,11 @@ export class TranscriptionPollingFallbackService {
     try {
       const jobs = await this.transcriptions.listUserJobs(this.currentUserId);
       const hasPendingJobs = jobs.some((job) => job.statusId === 2);
+      console.debug('[PollingFallback] poll result', jobs.map((job) => ({
+        id: job.id,
+        referenceId: job.referenceId,
+        statusId: job.statusId,
+      })));
 
       for (const job of jobs) {
         const previous = this.knownJobs.get(job.id);

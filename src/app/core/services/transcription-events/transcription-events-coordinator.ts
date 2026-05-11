@@ -1,6 +1,7 @@
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ToastService } from '../toast/toast';
+import { TranscriptionJob } from '../transcriptions/transcriptions.types';
 import { RealtimeTranscriptionsService } from './realtime-transcriptions';
 import { TranscriptionPollingFallbackService } from './transcription-polling-fallback';
 import { TranscriptionRealtimeEvent, TranscriptionRealtimeStatus } from './transcription-events.types';
@@ -33,16 +34,18 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
 
   async start(userId: string): Promise<void> {
     if (this.activeUserId === userId) {
+      console.debug('[Events] start skipped, already active', { userId });
       return;
     }
 
+    console.debug('[Events] start', { userId });
     this.stop();
     this.activeUserId = userId;
     const result = await this.realtime.connect(userId);
+    console.debug('[Events] realtime result', { result, status: this.realtimeStatus() });
 
-    if (result === 'unavailable') {
+    if (result === 'unavailable' || result === 'error') {
       this.fallbackActive.set(true);
-      this.pollingFallback.start(userId);
       return;
     }
 
@@ -50,6 +53,9 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
   }
 
   stop(): void {
+    if (this.activeUserId) {
+      console.debug('[Events] stop', { userId: this.activeUserId });
+    }
     this.realtime.disconnect();
     this.pollingFallback.stop();
     this.activeUserId = null;
@@ -59,18 +65,33 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
 
   ensurePollingFallbackForPendingJobs(): void {
     if (!this.fallbackActive() || !this.activeUserId) {
+      console.debug('[Events] polling fallback not active', {
+        fallbackActive: this.fallbackActive(),
+        activeUserId: this.activeUserId,
+      });
       return;
     }
 
+    console.debug('[Events] ensure polling fallback', { userId: this.activeUserId });
     this.pollingFallback.start(this.activeUserId);
+  }
+
+  seedPollingFallbackJobs(jobs: TranscriptionJob[]): void {
+    if (!this.fallbackActive()) {
+      return;
+    }
+
+    this.pollingFallback.seedKnownJobs(jobs);
   }
 
   private handleEvent(event: TranscriptionRealtimeEvent): void {
     const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
     if (this.seenEventKeys.has(eventKey)) {
+      console.debug('[Events] duplicate ignored', { eventKey, event });
       return;
     }
 
+    console.debug('[Events] event received', event);
     this.seenEventKeys.add(eventKey);
     this.lastEvent.set(event);
 

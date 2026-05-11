@@ -36,6 +36,7 @@ export class Transcriptions implements OnInit {
   readonly statusFilter = signal<string>('all');
   readonly languageFilter = signal<string>('all');
   private hasLoadedInitialData = false;
+  private lastHandledRealtimeEventKey: string | null = null;
 
   // Modal de confirmación
   readonly showDeleteModal = signal(false);
@@ -102,11 +103,21 @@ export class Transcriptions implements OnInit {
         return;
       }
 
+      const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
+      if (this.lastHandledRealtimeEventKey === eventKey) {
+        return;
+      }
+      this.lastHandledRealtimeEventKey = eventKey;
+
+      console.debug('[Transcriptions] realtime event received', event);
+
       if (event.type === 'deleted') {
+        console.debug('[Transcriptions] removing deleted job from table', { jobId: event.jobId });
         this.jobs.update((jobs) => jobs.filter((job) => job.id !== event.jobId));
         return;
       }
 
+      console.debug('[Transcriptions] refreshing jobs after realtime event', event);
       this.refreshJobs();
     });
   }
@@ -139,7 +150,14 @@ export class Transcriptions implements OnInit {
     try {
       const jobs = await this.transcriptionsService.listUserJobs(user.id);
       console.log('Jobs loaded:', jobs);
+      console.debug('[Transcriptions] jobs refreshed', jobs.map((job) => ({
+        id: job.id,
+        referenceId: job.referenceId,
+        statusId: job.statusId,
+        title: job.title,
+      })));
       this.jobs.set(jobs);
+      this.transcriptionEvents.seedPollingFallbackJobs(jobs);
       if (jobs.some((job) => job.statusId === 2)) {
         this.transcriptionEvents.ensurePollingFallbackForPendingJobs();
       }

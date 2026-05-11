@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -37,6 +37,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
   private relativeTimeInterval: ReturnType<typeof setInterval> | null = null;
+  private lastHandledRealtimeEventKey: string | null = null;
 
   // Signals para el estado
   readonly job = signal<TranscriptionJob | null>(null);
@@ -136,8 +137,13 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const event = this.transcriptionEvents.lastEvent();
-      const currentJob = this.job();
+      const currentJob = untracked(() => this.job());
       if (!event || !currentJob) {
+        return;
+      }
+
+      const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
+      if (this.lastHandledRealtimeEventKey === eventKey) {
         return;
       }
 
@@ -145,6 +151,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       if (!matchesCurrentJob) {
         return;
       }
+
+      this.lastHandledRealtimeEventKey = eventKey;
 
       if (event.type === 'deleted') {
         this.toast.info('Esta transcripción fue eliminada.');

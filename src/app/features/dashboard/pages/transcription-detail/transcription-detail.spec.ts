@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -56,6 +56,7 @@ describe('TranscriptionDetail', () => {
     getLanguageName: jest.Mock;
   };
   let currentJob: TranscriptionJob = mockJob;
+  let lastEventSignal: WritableSignal<unknown>;
 
   beforeEach(async () => {
     history.replaceState({ job: mockJob }, '', '/dashboard/transcriptions/test-job-id');
@@ -72,6 +73,7 @@ describe('TranscriptionDetail', () => {
     };
 
     currentJob = mockJob;
+    lastEventSignal = signal(null);
     transcriptionsMock = {
       getJobById: jest.fn().mockImplementation(() => Promise.resolve(currentJob)),
       updateJobTitle: jest.fn().mockImplementation((_jobId: string, title: string) => Promise.resolve({ ...mockJob, title })),
@@ -147,7 +149,7 @@ describe('TranscriptionDetail', () => {
         {
           provide: TranscriptionEventsCoordinatorService,
           useValue: {
-            lastEvent: signal(null),
+            lastEvent: lastEventSignal,
           },
         }
       ]
@@ -373,6 +375,25 @@ describe('TranscriptionDetail', () => {
 
     expect(secondFixture.nativeElement.textContent).toContain('Par de traducción no soportado.');
     expect(secondFixture.nativeElement.textContent).toContain('Resumen no soportado para este idioma.');
+  });
+
+  it('should refresh once for a matching realtime event', async () => {
+    expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(1);
+
+    lastEventSignal.set({
+      type: 'completed',
+      jobId: mockJob.id,
+      transcriptionId: mockJob.referenceId,
+      title: mockJob.title,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(2);
   });
 });
 
