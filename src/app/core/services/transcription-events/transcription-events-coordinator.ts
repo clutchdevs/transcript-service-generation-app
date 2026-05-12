@@ -64,7 +64,7 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
   }
 
   ensurePollingFallbackForPendingJobs(): void {
-    if (!this.fallbackActive() || !this.activeUserId) {
+    if (!this.activeUserId) {
       console.debug('[Events] polling fallback not active', {
         fallbackActive: this.fallbackActive(),
         activeUserId: this.activeUserId,
@@ -77,7 +77,7 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
   }
 
   seedPollingFallbackJobs(jobs: TranscriptionJob[]): void {
-    if (!this.fallbackActive()) {
+    if (!this.activeUserId) {
       return;
     }
 

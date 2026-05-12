@@ -79,4 +79,14 @@ describe('TranscriptionEventsCoordinatorService', () => {
 
     expect(fallbackMock.start).toHaveBeenCalledWith('user-1');
   });
+
+  it('should start polling fallback for pending jobs when realtime is connected', async () => {
+    realtimeMock.connect.mockResolvedValue('connected');
+
+    await service.start('user-1');
+    service.ensurePollingFallbackForPendingJobs();
+
+    expect(fallbackMock.start).toHaveBeenCalledWith('user-1');
+    expect(service.fallbackActive()).toBe(false);
+  });
 });
