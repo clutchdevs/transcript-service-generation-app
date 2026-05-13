@@ -64,15 +64,15 @@ describe('NewTranscription', () => {
   });
 
   it('should include summary and translation config when enabled', async () => {
-    component.selectedFile = new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' });
-    component.selectedLanguage = 'en';
-    component.selectedOperatingPoint = 'enhanced';
-    component.isSummarizationEnabled = true;
-    component.summaryContentType = 'informative';
-    component.summaryLength = 'detailed';
-    component.summaryType = 'bullets';
-    component.isTranslationEnabled = true;
-    component.selectedTargetLanguages = ['es', 'de'];
+    component.selectedFile.set(new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' }));
+    component.selectedLanguage.set('en');
+    component.selectedOperatingPoint.set('enhanced');
+    component.isSummarizationEnabled.set(true);
+    component.summaryContentType.set('informative');
+    component.summaryLength.set('detailed');
+    component.summaryType.set('bullets');
+    component.isTranslationEnabled.set(true);
+    component.selectedTargetLanguages.set(['es', 'de']);
 
     await component.onCreate();
 
@@ -97,10 +97,10 @@ describe('NewTranscription', () => {
   });
 
   it('should block submit when translation is enabled without target languages', async () => {
-    component.selectedFile = new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' });
-    component.selectedLanguage = 'en';
-    component.isTranslationEnabled = true;
-    component.selectedTargetLanguages = [];
+    component.selectedFile.set(new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' }));
+    component.selectedLanguage.set('en');
+    component.isTranslationEnabled.set(true);
+    component.selectedTargetLanguages.set([]);
 
     await component.onCreate();
 
@@ -109,14 +109,14 @@ describe('NewTranscription', () => {
   });
 
   it('should disable translation when source language is not english', () => {
-    component.selectedLanguage = 'en';
-    component.isTranslationEnabled = true;
-    component.selectedTargetLanguages = ['es'];
+    component.selectedLanguage.set('en');
+    component.isTranslationEnabled.set(true);
+    component.selectedTargetLanguages.set(['es']);
 
     component.onLanguageChange({ target: { value: 'es' } } as unknown as Event);
 
-    expect(component.isTranslationEnabled).toBe(false);
-    expect(component.selectedTargetLanguages).toEqual([]);
+    expect(component.isTranslationEnabled()).toBe(false);
+    expect(component.selectedTargetLanguages()).toEqual([]);
   });
 
   it('should initialize with defaults from settings service', () => {
@@ -139,9 +139,9 @@ describe('NewTranscription', () => {
     const secondComponent = secondFixture.componentInstance;
     secondFixture.detectChanges();
 
-    expect(secondComponent.selectedLanguage).toBe('en');
-    expect(secondComponent.selectedOperatingPoint).toBe('enhanced');
-    expect(secondComponent.isSummarizationEnabled).toBe(true);
-    expect(secondComponent.summaryType).toBe('paragraphs');
+    expect(secondComponent.selectedLanguage()).toBe('en');
+    expect(secondComponent.selectedOperatingPoint()).toBe('enhanced');
+    expect(secondComponent.isSummarizationEnabled()).toBe(true);
+    expect(secondComponent.summaryType()).toBe('paragraphs');
   });
 });

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
@@ -24,19 +24,19 @@ export class NewTranscription {
   private transcriptions = inject(Transcriptions);
   private appSettings = inject(AppSettingsService);
 
-  selectedLanguage: string = 'es';
-  selectedOperatingPoint: OperatingPoint = 'standard';
-  selectedFile: File | null = null;
+  readonly selectedLanguage = signal('es');
+  readonly selectedOperatingPoint = signal<OperatingPoint>('standard');
+  readonly selectedFile = signal<File | null>(null);
   private readonly MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
   private readonly MAX_TRANSLATION_TARGETS = 5;
 
-  isSummarizationEnabled = false;
-  summaryContentType: SummaryContentType = 'auto';
-  summaryLength: SummaryLength = 'brief';
-  summaryType: SummaryType = 'bullets';
+  readonly isSummarizationEnabled = signal(false);
+  readonly summaryContentType = signal<SummaryContentType>('auto');
+  readonly summaryLength = signal<SummaryLength>('brief');
+  readonly summaryType = signal<SummaryType>('bullets');
 
-  isTranslationEnabled = false;
-  selectedTargetLanguages: string[] = [];
+  readonly isTranslationEnabled = signal(false);
+  readonly selectedTargetLanguages = signal<string[]>([]);
 
   readonly summaryContentTypeOptions: SelectOption[] = [
     { value: 'auto', label: 'Automático' },
@@ -55,6 +55,16 @@ export class NewTranscription {
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly isTranslationAvailable = computed(() => this.selectedLanguage() === 'en');
+  readonly canSubmit = computed(() => {
+    if (!this.selectedFile() || this.isLoading()) {
+      return false;
+    }
+    if (this.isTranslationEnabled() && this.selectedTargetLanguages().length === 0) {
+      return false;
+    }
+    return true;
+  });
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -66,26 +76,12 @@ export class NewTranscription {
   }
 
   private isDirty(): boolean {
-    return !!this.selectedFile
-      || this.selectedLanguage !== 'es'
-      || this.selectedOperatingPoint !== 'standard'
-      || this.isSummarizationEnabled
-      || this.isTranslationEnabled
-      || this.selectedTargetLanguages.length > 0;
-  }
-
-  get isTranslationAvailable(): boolean {
-    return this.selectedLanguage === 'en';
-  }
-
-  get canSubmit(): boolean {
-    if (!this.selectedFile || this.isLoading()) {
-      return false;
-    }
-    if (this.isTranslationEnabled && this.selectedTargetLanguages.length === 0) {
-      return false;
-    }
-    return true;
+    return !!this.selectedFile()
+      || this.selectedLanguage() !== 'es'
+      || this.selectedOperatingPoint() !== 'standard'
+      || this.isSummarizationEnabled()
+      || this.isTranslationEnabled()
+      || this.selectedTargetLanguages().length > 0;
   }
 
   onCancel(): void {
@@ -114,7 +110,7 @@ export class NewTranscription {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files[0];
     if (!file) {
-      this.selectedFile = null;
+      this.selectedFile.set(null);
       return;
     }
     // Validate type and size
@@ -131,53 +127,53 @@ export class NewTranscription {
       return;
     }
     this.error.set(null);
-    this.selectedFile = file;
+    this.selectedFile.set(file);
   }
 
   onLanguageChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
-    this.selectedLanguage = value;
+    this.selectedLanguage.set(value);
 
-    if (!this.isTranslationAvailable) {
-      this.isTranslationEnabled = false;
-      this.selectedTargetLanguages = [];
+    if (!this.isTranslationAvailable()) {
+      this.isTranslationEnabled.set(false);
+      this.selectedTargetLanguages.set([]);
     }
 
-    this.selectedTargetLanguages = this.selectedTargetLanguages.filter((code) => code !== value);
+    this.selectedTargetLanguages.update((languages) => languages.filter((code) => code !== value));
   }
 
   onOperatingPointChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value as OperatingPoint;
-    this.selectedOperatingPoint = value;
+    this.selectedOperatingPoint.set(value);
   }
 
   onSummarizationToggle(event: Event): void {
-    this.isSummarizationEnabled = (event.target as HTMLInputElement).checked;
+    this.isSummarizationEnabled.set((event.target as HTMLInputElement).checked);
   }
 
   onTranslationToggle(event: Event): void {
     const enabled = (event.target as HTMLInputElement).checked;
-    if (enabled && !this.isTranslationAvailable) {
-      this.isTranslationEnabled = false;
+    if (enabled && !this.isTranslationAvailable()) {
+      this.isTranslationEnabled.set(false);
       return;
     }
 
-    this.isTranslationEnabled = enabled;
+    this.isTranslationEnabled.set(enabled);
     if (!enabled) {
-      this.selectedTargetLanguages = [];
+      this.selectedTargetLanguages.set([]);
     }
   }
 
   onSummaryContentTypeChange(event: Event): void {
-    this.summaryContentType = (event.target as HTMLSelectElement).value as SummaryContentType;
+    this.summaryContentType.set((event.target as HTMLSelectElement).value as SummaryContentType);
   }
 
   onSummaryLengthChange(event: Event): void {
-    this.summaryLength = (event.target as HTMLSelectElement).value as SummaryLength;
+    this.summaryLength.set((event.target as HTMLSelectElement).value as SummaryLength);
   }
 
   onSummaryTypeChange(event: Event): void {
-    this.summaryType = (event.target as HTMLSelectElement).value as SummaryType;
+    this.summaryType.set((event.target as HTMLSelectElement).value as SummaryType);
   }
 
   onTargetLanguageToggle(event: Event): void {
@@ -185,39 +181,39 @@ export class NewTranscription {
     const code = checkbox.value;
 
     if (checkbox.checked) {
-      if (this.selectedTargetLanguages.length >= this.MAX_TRANSLATION_TARGETS) {
+      if (this.selectedTargetLanguages().length >= this.MAX_TRANSLATION_TARGETS) {
         checkbox.checked = false;
         return;
       }
-      if (!this.selectedTargetLanguages.includes(code)) {
-        this.selectedTargetLanguages = [...this.selectedTargetLanguages, code];
-      }
+      this.selectedTargetLanguages.update((languages) => languages.includes(code) ? languages : [...languages, code]);
       return;
     }
 
-    this.selectedTargetLanguages = this.selectedTargetLanguages.filter((lang) => lang !== code);
+    this.selectedTargetLanguages.update((languages) => languages.filter((lang) => lang !== code));
   }
 
   isTargetLanguageSelected(code: string): boolean {
-    return this.selectedTargetLanguages.includes(code);
+    return this.selectedTargetLanguages().includes(code);
   }
 
   isTargetLanguageDisabled(code: string): boolean {
-    if (code === this.selectedLanguage) {
+    if (code === this.selectedLanguage()) {
       return true;
     }
     if (this.isTargetLanguageSelected(code)) {
       return false;
     }
-    return this.selectedTargetLanguages.length >= this.MAX_TRANSLATION_TARGETS;
+    return this.selectedTargetLanguages().length >= this.MAX_TRANSLATION_TARGETS;
   }
 
   async onCreate(): Promise<void> {
-    if (!this.selectedFile) {
+    const selectedFile = this.selectedFile();
+    const selectedLanguage = this.selectedLanguage();
+    if (!selectedFile) {
       this.error.set('Selecciona un archivo de audio.');
       return;
     }
-    if (!this.selectedLanguage) {
+    if (!selectedLanguage) {
       this.error.set('Selecciona un idioma.');
       return;
     }
@@ -228,30 +224,31 @@ export class NewTranscription {
       const config: CreateJobConfig = {
         type: 'transcription',
         transcription_config: {
-          language: this.selectedLanguage,
-          operating_point: this.selectedOperatingPoint,
+          language: selectedLanguage,
+          operating_point: this.selectedOperatingPoint(),
         },
       };
 
-      if (this.isSummarizationEnabled) {
+      if (this.isSummarizationEnabled()) {
         config.summarization_config = {
-          content_type: this.summaryContentType,
-          summary_length: this.summaryLength,
-          summary_type: this.summaryType,
+          content_type: this.summaryContentType(),
+          summary_length: this.summaryLength(),
+          summary_type: this.summaryType(),
         };
       }
 
-      if (this.isTranslationEnabled) {
-        if (this.selectedTargetLanguages.length === 0) {
+      if (this.isTranslationEnabled()) {
+        const selectedTargetLanguages = this.selectedTargetLanguages();
+        if (selectedTargetLanguages.length === 0) {
           this.error.set('Selecciona al menos un idioma de traducción.');
           return;
         }
         config.translation_config = {
-          target_languages: this.selectedTargetLanguages,
+          target_languages: selectedTargetLanguages,
         };
       }
 
-      await this.transcriptions.createJob(config, this.selectedFile);
+      await this.transcriptions.createJob(config, selectedFile);
       this.navigation.navigate('/dashboard/transcriptions');
     } catch (e: unknown) {
       const msg = (e as { message?: string })?.message || 'No se pudo crear el job.';
@@ -267,7 +264,7 @@ export class NewTranscription {
   }
 
   private clearSelectedFileOnly(): void {
-    this.selectedFile = null;
+    this.selectedFile.set(null);
     if (this.fileInput?.nativeElement) {
       this.fileInput.nativeElement.value = '';
     }
@@ -281,20 +278,20 @@ export class NewTranscription {
   }
 
   private applyBatchDefaults(batchDefaults: BatchDefaults): void {
-    this.selectedLanguage = batchDefaults.language;
-    this.selectedOperatingPoint = batchDefaults.operatingPoint;
+    this.selectedLanguage.set(batchDefaults.language);
+    this.selectedOperatingPoint.set(batchDefaults.operatingPoint);
 
-    this.isSummarizationEnabled = batchDefaults.summarization.enabled;
-    this.summaryContentType = batchDefaults.summarization.contentType;
-    this.summaryLength = batchDefaults.summarization.length;
-    this.summaryType = batchDefaults.summarization.type;
+    this.isSummarizationEnabled.set(batchDefaults.summarization.enabled);
+    this.summaryContentType.set(batchDefaults.summarization.contentType);
+    this.summaryLength.set(batchDefaults.summarization.length);
+    this.summaryType.set(batchDefaults.summarization.type);
 
-    this.isTranslationEnabled = batchDefaults.translation.enabled;
-    this.selectedTargetLanguages = batchDefaults.translation.targetLanguages.filter((code) => code !== this.selectedLanguage);
+    this.isTranslationEnabled.set(batchDefaults.translation.enabled);
+    this.selectedTargetLanguages.set(batchDefaults.translation.targetLanguages.filter((code) => code !== this.selectedLanguage()));
 
-    if (!this.isTranslationAvailable) {
-      this.isTranslationEnabled = false;
-      this.selectedTargetLanguages = [];
+    if (!this.isTranslationAvailable()) {
+      this.isTranslationEnabled.set(false);
+      this.selectedTargetLanguages.set([]);
     }
   }
 
