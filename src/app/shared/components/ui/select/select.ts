@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 
 export type SelectSize = 'sm' | 'md' | 'lg';
 
@@ -12,7 +12,7 @@ export interface SelectOption {
 @Component({
   selector: 'app-select',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './select.html',
   styleUrl: './select.scss',
   providers: [

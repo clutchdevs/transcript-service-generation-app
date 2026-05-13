@@ -1,5 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Button } from '../../../../shared/components/ui/button/button';
 
@@ -8,7 +8,7 @@ type RealtimeConnectionState = 'disconnected' | 'connecting' | 'live' | 'reconne
 @Component({
   selector: 'app-realtime',
   standalone: true,
-  imports: [CommonModule, FormsModule, Button],
+  imports: [FormsModule, Button],
   templateUrl: './realtime.html',
   styleUrl: './realtime.scss'
 })

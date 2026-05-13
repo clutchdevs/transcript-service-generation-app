@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { LANGUAGES, OPERATING_POINTS, TRANSLATION_TARGET_OPTIONS, SelectOption } from '../../../../core/integrations/speechmatics/constants';
@@ -9,7 +9,7 @@ import { ToastService } from '../../../../core/services/toast/toast';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, Button],
+  imports: [FormsModule, Button],
   templateUrl: './settings.html',
   styleUrl: './settings.scss'
 })

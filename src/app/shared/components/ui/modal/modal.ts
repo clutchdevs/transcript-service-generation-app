@@ -1,10 +1,10 @@
 import { Component, EventEmitter, HostListener, Input, Output, AfterViewInit, OnDestroy, ViewChild, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './modal.html',
   styleUrl: './modal.scss'
 })

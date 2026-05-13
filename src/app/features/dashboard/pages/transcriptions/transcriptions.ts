@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
 import { TranscriptionsFilters } from './components/transcriptions-filters/transcriptions-filters';
@@ -16,7 +16,7 @@ import { ToastService } from '../../../../core/services/toast/toast';
 
 @Component({
   selector: 'app-transcriptions',
-  imports: [CommonModule, Button, Modal, TranscriptionsFilters, TranscriptionsTable],
+  imports: [Button, Modal, TranscriptionsFilters, TranscriptionsTable],
   templateUrl: './transcriptions.html',
   styleUrl: './transcriptions.scss'
 })

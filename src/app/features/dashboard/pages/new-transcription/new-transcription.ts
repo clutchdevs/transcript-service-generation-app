@@ -1,5 +1,5 @@
 import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Modal } from '../../../../shared/components/ui/modal/modal';
 import { LANGUAGES, OPERATING_POINTS, TRANSLATION_TARGET_OPTIONS, SelectOption } from '../../../../core/integrations/speechmatics/constants';
@@ -10,7 +10,7 @@ import { AppSettingsService, BatchDefaults } from '../../../../core/services/app
 
 @Component({
   selector: 'app-new-transcription',
-  imports: [CommonModule, Button, Modal],
+  imports: [Button, Modal],
   templateUrl: './new-transcription.html',
   styleUrl: './new-transcription.scss'
 })
