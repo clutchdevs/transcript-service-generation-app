@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NewTranscription } from './new-transcription';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
-import { Auth } from '../../../../core/services/auth/auth';
 import { AppSettingsService, DEFAULT_APP_SETTINGS } from '../../../../core/services/app-settings/app-settings';
 
 describe('NewTranscription', () => {
@@ -48,12 +47,6 @@ describe('NewTranscription', () => {
           useValue: navigationMock,
         },
         {
-          provide: Auth,
-          useValue: {
-            user: jest.fn().mockReturnValue({ id: 'user-1', email: 'test@example.com' }),
-          },
-        },
-        {
           provide: AppSettingsService,
           useValue: appSettingsMock,
         },
@@ -84,7 +77,6 @@ describe('NewTranscription', () => {
     await component.onCreate();
 
     expect(transcriptionsMock.createJob).toHaveBeenCalledWith(
-      'user-1',
       {
         type: 'transcription',
         transcription_config: {

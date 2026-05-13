@@ -37,6 +37,14 @@ yarn-error.log
 testem.log
 /typings
 
+# Local planning notes
+BACKEND_PENDING.md
+FRONTEND_PENDING.md
+
+# Local AI assistant tooling
+.agents/
+skills-lock.json
+
 # System files
 .DS_Store
 Thumbs.db

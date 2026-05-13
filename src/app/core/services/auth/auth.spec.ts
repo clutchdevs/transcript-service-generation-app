@@ -52,4 +52,22 @@ describe('Auth', () => {
 
     expect(service.error()).toBe('No se pudo establecer una conexión segura con el servidor. Verifica el certificado SSL del API.');
   });
+
+  it('should preserve register validation issues for field-level handling', async () => {
+    const issues = [{ path: ['email'], validation: 'email', message: 'Invalid email' }];
+    apiMock.post.mockReturnValue(throwError(() => ({ status: 400, message: 'Validation failed', issues })));
+
+    await expect(service.register({
+      email: 'invalid',
+      password: '12345678',
+      firstName: 'Test',
+      lastName: 'User',
+    })).rejects.toMatchObject({
+      message: 'Ingresa un email válido',
+      status: 400,
+      issues,
+    });
+
+    expect(service.error()).toBe('Ingresa un email válido');
+  });
 });

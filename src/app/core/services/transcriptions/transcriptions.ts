@@ -85,11 +85,7 @@ export class Transcriptions {
    * Do NOT set Content-Type manually; the browser will set the proper boundary.
    * @returns The created transcription job data
    */
-  async createJob(
-    userId: string,
-    config: CreateJobConfig,
-    file: File
-  ): Promise<CreateJobResponse> {
+  async createJob(config: CreateJobConfig, file: File): Promise<CreateJobResponse> {
     const formData = new FormData();
     formData.append('config', JSON.stringify(config));
     formData.append('audioFile', file, file.name);
@@ -100,7 +96,6 @@ export class Transcriptions {
     );
 
     // Support both wrapped and raw responses
-    void userId;
     const data = (response as ApiResponse<CreateJobResponse>).data;
     if (data !== undefined) {
       return this.normalizeJob(data) as CreateJobResponse;

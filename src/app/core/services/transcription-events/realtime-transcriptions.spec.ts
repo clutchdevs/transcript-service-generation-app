@@ -40,6 +40,27 @@ describe('RealtimeTranscriptionsService', () => {
     expect(service.status()).toBe('unavailable');
   });
 
+  it('should rebuild an existing same-user connection when it is disconnected', async () => {
+    apiMock.post.mockReturnValue(throwError(() => ({ status: 503 })));
+    Object.assign(service as unknown as {
+      currentUserId: string;
+      centrifuge: { disconnect: jest.Mock; removeAllListeners: jest.Mock };
+    }, {
+      currentUserId: 'user-1',
+      centrifuge: {
+        disconnect: jest.fn(),
+        removeAllListeners: jest.fn(),
+      },
+    });
+    service.status.set('disconnected');
+
+    const result = await service.connect('user-1');
+
+    expect(apiMock.post).toHaveBeenCalledWith('/api/realtime/token', {});
+    expect(result).toBe('unavailable');
+    expect(service.status()).toBe('unavailable');
+  });
+
   it('should normalize Epic A job events without transcriptionId', () => {
     const normalizePayload = (service as unknown as {
       normalizePayload: (payload: unknown) => unknown;

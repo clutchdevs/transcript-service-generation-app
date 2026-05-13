@@ -23,8 +23,12 @@ export class RealtimeTranscriptionsService {
 
   async connect(userId: string): Promise<'connected' | 'unavailable' | 'error'> {
     if (this.currentUserId === userId && this.centrifuge) {
-      console.debug('[Realtime] already initialized for user', { userId, status: this.status() });
-      return this.status() === 'unavailable' ? 'unavailable' : 'connected';
+      const status = this.status();
+      if (status === 'connected') {
+        console.debug('[Realtime] already initialized for user', { userId, status });
+        return 'connected';
+      }
+      console.debug('[Realtime] rebuilding unhealthy connection for user', { userId, status });
     }
 
     this.disconnect();

@@ -6,7 +6,6 @@ import { LANGUAGES, OPERATING_POINTS, TRANSLATION_TARGET_OPTIONS, SelectOption }
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { OperatingPoint, CreateJobConfig, SummaryContentType, SummaryLength, SummaryType } from '../../../../core/integrations/speechmatics/types';
 import { Transcriptions } from '../../../../core/services/transcriptions/transcriptions';
-import { Auth } from '../../../../core/services/auth/auth';
 import { AppSettingsService, BatchDefaults } from '../../../../core/services/app-settings/app-settings';
 
 @Component({
@@ -23,7 +22,6 @@ export class NewTranscription {
 
   private navigation = inject(NavigationService);
   private transcriptions = inject(Transcriptions);
-  private auth = inject(Auth);
   private appSettings = inject(AppSettingsService);
 
   selectedLanguage: string = 'es';
@@ -253,8 +251,7 @@ export class NewTranscription {
         };
       }
 
-      const userId = this.auth.user()?.id || '';
-      await this.transcriptions.createJob(userId, config, this.selectedFile);
+      await this.transcriptions.createJob(config, this.selectedFile);
       this.navigation.navigate('/dashboard/transcriptions');
     } catch (e: unknown) {
       const msg = (e as { message?: string })?.message || 'No se pudo crear el job.';

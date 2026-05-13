@@ -225,8 +225,12 @@ export class Auth {
       }
 
       this.setError(errorMessage);
-      // Re-throw original error so the component can apply field-level errors
-      throw new Error(errorMessage);
+      const registerError = new Error(errorMessage) as Error & ApiThrownError;
+      registerError.isApiError = apiError?.isApiError;
+      registerError.status = apiError?.status;
+      registerError.userMessage = apiError?.userMessage;
+      registerError.issues = issues;
+      throw registerError;
     } finally {
       this.updateLoading(false);
     }
