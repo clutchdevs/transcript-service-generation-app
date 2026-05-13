@@ -28,8 +28,11 @@ export class TranscriptionPollingFallbackService {
     })));
   }
 
-  start(userId: string): void {
+  start(userId: string, initialJobs: TranscriptionJob[] = []): void {
     if (this.currentUserId === userId && this.intervalId) {
+      if (initialJobs.length > 0) {
+        this.seedKnownJobs(initialJobs);
+      }
       console.debug('[PollingFallback] already running', { userId });
       return;
     }
@@ -37,6 +40,9 @@ export class TranscriptionPollingFallbackService {
     console.debug('[PollingFallback] start', { userId, intervalMs: this.POLLING_INTERVAL_MS });
     this.stop();
     this.currentUserId = userId;
+    if (initialJobs.length > 0) {
+      this.seedKnownJobs(initialJobs);
+    }
     void this.pollOnce();
     this.intervalId = setInterval(() => void this.pollOnce(), this.POLLING_INTERVAL_MS);
   }

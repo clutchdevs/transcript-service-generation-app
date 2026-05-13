@@ -97,6 +97,24 @@ describe('TranscriptionPollingFallbackService', () => {
     ]);
   });
 
+  it('should emit completed on first poll when started with a pending baseline', async () => {
+    const received: unknown[] = [];
+    service.events$.subscribe((event) => received.push(event));
+    transcriptionsMock.listUserJobs.mockResolvedValueOnce([{ ...pendingJob, statusId: 3 }]);
+
+    service.start('user-1', [pendingJob]);
+    await Promise.resolve();
+
+    expect(received).toEqual([
+      {
+        type: 'completed',
+        jobId: 'job-1',
+        transcriptionId: 'ref-1',
+        title: 'Audio pendiente',
+      },
+    ]);
+  });
+
   it('should emit failed when a pending job becomes failed', async () => {
     const received: unknown[] = [];
     service.events$.subscribe((event) => received.push(event));

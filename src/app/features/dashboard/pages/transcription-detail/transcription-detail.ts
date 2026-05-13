@@ -143,7 +143,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       }
 
       const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
-      if (this.lastHandledRealtimeEventKey === eventKey) {
+      if (event.type !== 'updated' && this.lastHandledRealtimeEventKey === eventKey) {
         return;
       }
 
@@ -152,7 +152,9 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
         return;
       }
 
-      this.lastHandledRealtimeEventKey = eventKey;
+      if (event.type !== 'updated') {
+        this.lastHandledRealtimeEventKey = eventKey;
+      }
 
       if (event.type === 'deleted') {
         this.toast.info('Esta transcripción fue eliminada.');

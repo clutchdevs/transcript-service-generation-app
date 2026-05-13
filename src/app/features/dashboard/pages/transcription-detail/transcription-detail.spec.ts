@@ -395,6 +395,30 @@ describe('TranscriptionDetail', () => {
 
     expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(2);
   });
+
+  it('should refresh for repeated updated events on the same job', async () => {
+    expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(1);
+
+    lastEventSignal.set({
+      type: 'updated',
+      jobId: mockJob.id,
+      statusId: 2,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    lastEventSignal.set({
+      type: 'updated',
+      jobId: mockJob.id,
+      statusId: 3,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(3);
+  });
 });
 
 

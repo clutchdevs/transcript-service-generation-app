@@ -63,7 +63,7 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
     this.seenEventKeys.clear();
   }
 
-  ensurePollingFallbackForPendingJobs(): void {
+  ensurePollingFallbackForPendingJobs(jobs: TranscriptionJob[] = []): void {
     if (!this.activeUserId) {
       console.debug('[Events] polling fallback not active', {
         fallbackActive: this.fallbackActive(),
@@ -73,7 +73,7 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
     }
 
     console.debug('[Events] ensure polling fallback', { userId: this.activeUserId });
-    this.pollingFallback.start(this.activeUserId);
+    this.pollingFallback.start(this.activeUserId, jobs);
   }
 
   seedPollingFallbackJobs(jobs: TranscriptionJob[]): void {
@@ -86,13 +86,15 @@ export class TranscriptionEventsCoordinatorService implements OnDestroy {
 
   private handleEvent(event: TranscriptionRealtimeEvent): void {
     const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
-    if (this.seenEventKeys.has(eventKey)) {
+    if (event.type !== 'updated' && this.seenEventKeys.has(eventKey)) {
       console.debug('[Events] duplicate ignored', { eventKey, event });
       return;
     }
 
     console.debug('[Events] event received', event);
-    this.seenEventKeys.add(eventKey);
+    if (event.type !== 'updated') {
+      this.seenEventKeys.add(eventKey);
+    }
     this.lastEvent.set(event);
 
     if (event.type === 'completed') {

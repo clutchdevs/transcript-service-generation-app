@@ -104,10 +104,12 @@ export class Transcriptions implements OnInit {
       }
 
       const eventKey = `${event.type}:${event.jobId}:${event.transcriptionId ?? ''}`;
-      if (this.lastHandledRealtimeEventKey === eventKey) {
+      if (event.type !== 'updated' && this.lastHandledRealtimeEventKey === eventKey) {
         return;
       }
-      this.lastHandledRealtimeEventKey = eventKey;
+      if (event.type !== 'updated') {
+        this.lastHandledRealtimeEventKey = eventKey;
+      }
 
       console.debug('[Transcriptions] realtime event received', event);
 
@@ -157,9 +159,10 @@ export class Transcriptions implements OnInit {
         title: job.title,
       })));
       this.jobs.set(jobs);
-      this.transcriptionEvents.seedPollingFallbackJobs(jobs);
       if (jobs.some((job) => job.statusId === 2)) {
-        this.transcriptionEvents.ensurePollingFallbackForPendingJobs();
+        this.transcriptionEvents.ensurePollingFallbackForPendingJobs(jobs);
+      } else {
+        this.transcriptionEvents.seedPollingFallbackJobs(jobs);
       }
       this.hasLoadedInitialData = true; // Marcar que ya se cargaron los datos iniciales
     } catch (error) {
