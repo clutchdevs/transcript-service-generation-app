@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
+import { guestGuard } from './core/guards/auth/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'auth',
+    canMatch: [guestGuard],
     loadChildren: () => import('./features/auth/routes').then((m) => m.authRoutes),
   },
   {
@@ -11,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/auth',
+    redirectTo: '/dashboard',
     pathMatch: 'full',
   },
 ];

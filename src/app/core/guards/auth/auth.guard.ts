@@ -1,7 +1,6 @@
-import { CanActivateFn } from '@angular/router';
 import { inject } from '@angular/core';
+import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { Auth } from '../../services/auth/auth';
-import { Router } from '@angular/router';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(Auth);
@@ -13,8 +12,15 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/auth']);
-  return false;
+  return router.createUrlTree(['/auth']);
 };
 
+export const guestGuard: CanMatchFn = () => {
+  const auth = inject(Auth);
+  const router = inject(Router);
+
+  return auth.isAuthenticated()
+    ? router.createUrlTree(['/dashboard'])
+    : true;
+};
 
