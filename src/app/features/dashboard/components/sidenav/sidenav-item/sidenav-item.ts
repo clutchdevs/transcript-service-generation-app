@@ -20,7 +20,6 @@ export interface SidenavItemData {
 export class SidenavItem {
   @Input() item!: SidenavItemData;
   @Input() collapsed: boolean = false;
-  @Input() active: boolean = false;
 
   @Output() itemClick = new EventEmitter<SidenavItemData>();
 

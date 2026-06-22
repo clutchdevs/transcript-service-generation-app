@@ -42,9 +42,6 @@ export class Transcriptions implements OnInit {
   readonly showDeleteModal = signal(false);
   readonly jobToDelete = signal<TranscriptionJob | null>(null);
 
-  // Idiomas disponibles
-  readonly languages = LANGUAGES;
-
   // Opciones para los selects
   readonly statusOptions: SelectOption[] = [
     { label: 'Todos los estados', value: 'all' },

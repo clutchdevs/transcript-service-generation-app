@@ -32,7 +32,6 @@ export class Home {
 
   readonly sidenavCollapsed = computed(() => this.sidenavCollapsedSignal());
   readonly mobileMenuOpen = computed(() => this.mobileMenuOpenSignal());
-  readonly activeItemId = 'transcriptions';
 
   // Custom navigation items (optional - will use defaults if empty)
   readonly sidenavItems: SidenavItemData[] = [
@@ -105,10 +104,6 @@ export class Home {
 
   onUserMenuToggle(): void {
     console.log('User menu toggled');
-  }
-
-  onNewTranscription(): void {
-    console.log('New transcription clicked');
   }
 
   onProfileClick(): void {

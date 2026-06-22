@@ -26,7 +26,6 @@ export class Modal implements AfterViewInit, OnDestroy, OnChanges {
 
   // Events
   @Output() closed = new EventEmitter<void>();
-  @Output() confirmed = new EventEmitter<void>();
 
   // A11y
   private static idCounter = 0;
@@ -126,10 +125,6 @@ export class Modal implements AfterViewInit, OnDestroy, OnChanges {
 
   onClose(): void {
     this.closed.emit();
-  }
-
-  onConfirm(): void {
-    this.confirmed.emit();
   }
 
   get dialogClasses(): string {

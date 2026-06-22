@@ -21,7 +21,6 @@ export interface SidenavItemConfig {
 })
 export class Sidenav implements OnInit, OnDestroy {
   @Input() items: SidenavItemConfig[] = [];
-  @Input() activeItemId: string = '';
   @Input() set collapsed(value: boolean) {
     this.isCollapsed.set(value);
   }
@@ -106,10 +105,6 @@ export class Sidenav implements OnInit, OnDestroy {
   closeMobileMenu(): void {
     this.isMobileOpen.set(false);
     this.mobileMenuClose.emit();
-  }
-
-  isActive(item: SidenavItemConfig): boolean {
-    return this.activeItemId === item.id;
   }
 
   private handleResize(): void {
