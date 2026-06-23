@@ -6,6 +6,8 @@ import { LANGUAGES, OPERATING_POINTS, TRANSLATION_TARGET_OPTIONS, SelectOption }
 import { AppSettingsData, AppSettingsService } from '../../../../core/services/app-settings/app-settings';
 import { ToastService } from '../../../../core/services/toast/toast';
 
+// TODO(FE-UI-001): Use a single SelectOption type shared by Speechmatics constants and app-select.
+
 @Component({
   selector: 'app-settings',
   standalone: true,
@@ -20,6 +22,7 @@ export class Settings {
   readonly languages = LANGUAGES;
   readonly operatingPoints = OPERATING_POINTS;
   readonly translationTargetOptions = TRANSLATION_TARGET_OPTIONS;
+  // TODO(FE-UI-002): Migrate native Settings selects to app-select after option types are unified.
   readonly autosaveDebounceOptions: SelectOption[] = [
     { value: '1000', label: '1 segundo' },
     { value: '1500', label: '1.5 segundos' },

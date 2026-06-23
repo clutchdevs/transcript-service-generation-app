@@ -13,12 +13,14 @@ type RealtimeConnectionState = 'disconnected' | 'connecting' | 'live' | 'reconne
   styleUrl: './realtime.scss'
 })
 export class Realtime {
+  // TODO(FE-RT-004): Replace mock session state with the Speechmatics Realtime adapter after BE-501 is available.
   readonly connectionState = signal<RealtimeConnectionState>('disconnected');
   readonly partialTranscript = signal('');
   readonly finalTranscripts = signal<string[]>([]);
   readonly uiError = signal<string | null>(null);
 
   language = 'es';
+  // TODO(FE-RT-003): Hydrate these local config values from Settings realtimeDefaults.
   maxDelay = 1;
   enablePartials = true;
   diarization: 'none' | 'speaker' | 'channel' = 'none';

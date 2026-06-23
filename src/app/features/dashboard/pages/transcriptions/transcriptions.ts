@@ -226,12 +226,12 @@ export class Transcriptions implements OnInit {
 
   cancelJob(job: TranscriptionJob): void {
     console.log('Cancel job:', job);
-    // TODO: Implementar cancelación de transcripción
+    // TODO(FE-JB-003): Wire list-level cancel action if this action returns to the table UI.
   }
 
   retryJob(job: TranscriptionJob): void {
     console.log('Retry job:', job);
-    // TODO: Implementar reintento de transcripción
+    // TODO(FE-JB-003): Wire retry after BE-105 defines whether retry reuses or creates a job.
   }
 
   refreshJobs(): void {

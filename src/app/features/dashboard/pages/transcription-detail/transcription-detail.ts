@@ -26,6 +26,7 @@ interface TranscriptResultLike {
   styleUrl: './transcription-detail.scss'
 })
 export class TranscriptionDetail implements OnInit, OnDestroy {
+  // TODO(FE-ST-003): Load editorDefaults from AppSettingsService instead of using fixed editor behavior.
   private readonly AUTOSAVE_DEBOUNCE_MS = 1500;
 
   private route = inject(ActivatedRoute);
@@ -459,6 +460,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   private scheduleAutosave(): void {
+    // TODO(FE-ST-003): Respect editorDefaults.autosaveEnabled and show "Cambios sin guardar" when disabled.
     this.clearAutosaveTimeout();
     this.autosaveTimeout = setTimeout(() => {
       this.persistDraft();
@@ -466,6 +468,7 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   private persistDraft(): boolean {
+    // TODO(FE-ED-002): Replace local-only persistence with backend edited transcript endpoints when BE-201/BE-202 exist.
     const currentJob = this.job();
     if (!currentJob) {
       return false;

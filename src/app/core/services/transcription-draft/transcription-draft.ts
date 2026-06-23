@@ -9,6 +9,7 @@ export interface TranscriptionDraftData {
 
 @Injectable({ providedIn: 'root' })
 export class TranscriptionDraftService {
+  // TODO(FE-ED-002): Keep this as a local fallback once edited transcripts are persisted by backend.
   private readonly keyPrefix = 'transcription.draft.';
 
   load(jobId: string): TranscriptionDraftData | null {

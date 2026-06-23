@@ -64,13 +64,19 @@ export class RealtimeTranscriptionsService {
       subscription.on('unsubscribed', (ctx) => console.warn('[Realtime] subscription unsubscribed', ctx));
       subscription.on('error', (ctx) => console.error('[Realtime] subscription error', ctx));
       subscription.on('publication', (ctx) => {
-        console.debug('[Realtime] publication raw', ctx.data);
-        const event = this.normalizePayload(ctx.data as CentrifugePayload);
+        const payload = ctx.data as CentrifugePayload;
+        console.debug('[Realtime] publication raw', payload);
+        if (payload.type === 'test') {
+          console.log('[Realtime] test event received', payload);
+          return;
+        }
+
+        const event = this.normalizePayload(payload);
         if (event) {
           console.debug('[Realtime] publication normalized', event);
           this.events$.next(event);
         } else {
-          console.warn('[Realtime] publication ignored', ctx.data);
+          console.warn('[Realtime] publication ignored', payload);
         }
       });
 
