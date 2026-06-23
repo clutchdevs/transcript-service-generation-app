@@ -16,6 +16,7 @@ export class RealtimeTranscriptionsService {
   private api = inject(Api);
   private centrifuge: Centrifuge | null = null;
   private subscription: Subscription | null = null;
+  private testSubscription: Subscription | null = null;
   private currentUserId: string | null = null;
 
   readonly status = signal<TranscriptionRealtimeStatus>('idle');
@@ -81,10 +82,22 @@ export class RealtimeTranscriptionsService {
       });
 
       subscription.subscribe();
+
+      const testSubscription = centrifuge.newSubscription('test');
+      testSubscription.on('subscribing', (ctx) => console.debug('[Realtime] test channel subscribing', ctx));
+      testSubscription.on('subscribed', (ctx) => console.debug('[Realtime] test channel subscribed', ctx));
+      testSubscription.on('unsubscribed', (ctx) => console.warn('[Realtime] test channel unsubscribed', ctx));
+      testSubscription.on('error', (ctx) => console.error('[Realtime] test channel error', ctx));
+      testSubscription.on('publication', (ctx) => {
+        console.log('[Realtime] test channel event received', ctx.data);
+      });
+      testSubscription.subscribe();
+
       centrifuge.connect();
 
       this.centrifuge = centrifuge;
       this.subscription = subscription;
+      this.testSubscription = testSubscription;
       await this.waitForSubscriptionReady(subscription, centrifuge);
       return 'connected';
     } catch (error) {
@@ -103,9 +116,12 @@ export class RealtimeTranscriptionsService {
   disconnect(): void {
     this.subscription?.removeAllListeners();
     this.subscription?.unsubscribe();
+    this.testSubscription?.removeAllListeners();
+    this.testSubscription?.unsubscribe();
     this.centrifuge?.disconnect();
     this.centrifuge?.removeAllListeners();
     this.subscription = null;
+    this.testSubscription = null;
     this.centrifuge = null;
     this.currentUserId = null;
     this.status.set('idle');
