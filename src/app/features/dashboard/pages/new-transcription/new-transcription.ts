@@ -27,8 +27,9 @@ export class NewTranscription {
   readonly selectedLanguage = signal('es');
   readonly selectedOperatingPoint = signal<OperatingPoint>('standard');
   readonly selectedFile = signal<File | null>(null);
-  private readonly MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+  private readonly MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
   private readonly MAX_TRANSLATION_TARGETS = 5;
+  private readonly SUPPORTED_MEDIA_EXTENSIONS = new Set(['wav', 'mp3', 'aac', 'ogg', 'mpeg', 'amr', 'm4a', 'mp4', 'flac']);
 
   readonly isSummarizationEnabled = signal(false);
   readonly summaryContentType = signal<SummaryContentType>('auto');
@@ -113,16 +114,16 @@ export class NewTranscription {
       this.selectedFile.set(null);
       return;
     }
-    // Validate type and size
-    const isAudio = file.type.startsWith('audio/');
+    // Validate type and size. Backend keeps the multipart field as audioFile but accepts audio/video media.
+    const isSupportedMedia = this.isSupportedMediaFile(file);
     const isSizeOk = file.size <= this.MAX_FILE_SIZE_BYTES;
-    if (!isAudio) {
-      this.error.set('El archivo debe ser de audio.');
+    if (!isSupportedMedia) {
+      this.error.set('El archivo debe ser de audio o video compatible.');
       this.clearSelectedFileOnly();
       return;
     }
     if (!isSizeOk) {
-      this.error.set('El archivo excede el tamaño máximo de 100 MB.');
+      this.error.set('El archivo excede el tamaño máximo de 500 MB.');
       this.clearSelectedFileOnly();
       return;
     }
@@ -210,7 +211,7 @@ export class NewTranscription {
     const selectedFile = this.selectedFile();
     const selectedLanguage = this.selectedLanguage();
     if (!selectedFile) {
-      this.error.set('Selecciona un archivo de audio.');
+      this.error.set('Selecciona un archivo de audio o video.');
       return;
     }
     if (!selectedLanguage) {
@@ -302,5 +303,13 @@ export class NewTranscription {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     const value = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
     return `${value} ${sizes[i]}`;
+  }
+
+  private isSupportedMediaFile(file: File): boolean {
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const hasSupportedExtension = this.SUPPORTED_MEDIA_EXTENSIONS.has(extension);
+    const hasSupportedMime = file.type.startsWith('audio/') || file.type.startsWith('video/');
+
+    return hasSupportedExtension && (hasSupportedMime || file.type === '');
   }
 }

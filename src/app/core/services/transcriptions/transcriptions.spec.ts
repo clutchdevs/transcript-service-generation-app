@@ -82,6 +82,30 @@ describe('Transcriptions', () => {
     cancelReq.flush({ statusCode: 200, data: jobResponse({ statusId: 5 }) });
     await expect(cancelPromise).resolves.toMatchObject({ statusId: 5 });
   });
+
+  it('should save edited transcript results', async () => {
+    const payload = {
+      editedTranscript: {
+        results: [
+          {
+            alternatives: [{ content: 'Edited', confidence: 1, language: 'en', speaker: 'UU' }],
+            start_time: 0,
+            end_time: 1,
+            type: 'word' as const,
+          },
+        ],
+      },
+    };
+
+    const promise = service.saveEditedTranscript('job-1', payload);
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/transcription/jobs/job-1/edited-transcript`);
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(payload);
+    req.flush({ statusCode: 200, message: 'Edited transcript saved' });
+
+    await expect(promise).resolves.toEqual({ statusCode: 200, message: 'Edited transcript saved' });
+  });
 });
 
 function jobResponse(overrides: Partial<ReturnType<typeof baseJob>> = {}) {

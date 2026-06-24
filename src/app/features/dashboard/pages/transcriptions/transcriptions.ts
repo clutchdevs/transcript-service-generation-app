@@ -224,16 +224,6 @@ export class Transcriptions implements OnInit {
     this.jobToDelete.set(null);
   }
 
-  cancelJob(job: TranscriptionJob): void {
-    console.log('Cancel job:', job);
-    // TODO(FE-JB-003): Wire list-level cancel action if this action returns to the table UI.
-  }
-
-  retryJob(job: TranscriptionJob): void {
-    console.log('Retry job:', job);
-    // TODO(FE-JB-003): Wire retry after BE-105 defines whether retry reuses or creates a job.
-  }
-
   refreshJobs(): void {
     this.hasLoadedInitialData = false;
     this.loadJobs();

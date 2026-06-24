@@ -12,6 +12,8 @@ import {
   CreateJobResponse,
   DeleteJobResponse,
   TranscriptResponse,
+  SaveEditedTranscriptRequest,
+  SaveEditedTranscriptResponse,
 } from './transcriptions.types';
 
 // Endpoints
@@ -24,6 +26,8 @@ const TRANSCRIPTION_ENDPOINTS = {
     `/api/transcription/jobs/${encodeURIComponent(jobId)}/transcript`,
   JOB_CANCEL: (jobId: string) =>
     `/api/transcription/jobs/${encodeURIComponent(jobId)}/cancel`,
+  JOB_EDITED_TRANSCRIPT: (jobId: string) =>
+    `/api/transcription/jobs/${encodeURIComponent(jobId)}/edited-transcript`,
 } as const;
 
 @Injectable({
@@ -130,6 +134,19 @@ export class Transcriptions {
     );
 
     return this.unwrapJobResponse(response);
+  }
+
+  async saveEditedTranscript(
+    jobId: string,
+    payload: SaveEditedTranscriptRequest,
+  ): Promise<SaveEditedTranscriptResponse> {
+    const endpoint = TRANSCRIPTION_ENDPOINTS.JOB_EDITED_TRANSCRIPT(jobId);
+    const response = await firstValueFrom(
+      this.api.put<SaveEditedTranscriptResponse>(endpoint, payload)
+    );
+
+    return (response as ApiResponse<SaveEditedTranscriptResponse>).data
+      ?? (response as unknown as SaveEditedTranscriptResponse);
   }
 
   /**

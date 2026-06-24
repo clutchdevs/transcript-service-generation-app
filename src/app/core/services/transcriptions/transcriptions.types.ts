@@ -22,6 +22,7 @@ export interface TranscriptionJob {
   processingCompletedAt?: string | null;
   errorMessage: string | null;
   metadata: Record<string, unknown> | null;
+  editedTranscript?: EditedTranscriptPayload | null;
   isDeleted?: boolean;
   deletedAt: string | null;
 }
@@ -81,19 +82,36 @@ export type CreateJobResponse = Pick<
 
 // Speechmatics transcript response interfaces
 export interface TranscriptAlternative {
-  confidence: number;
+  confidence?: number | null;
   content: string;
-  language: string;
-  speaker: string;
+  language?: string;
+  speaker?: string;
 }
 
 export interface TranscriptResult {
   alternatives: TranscriptAlternative[];
   end_time: number;
   start_time: number;
-  type: 'word' | 'punctuation';
-  attaches_to?: 'previous' | 'next';
+  type: 'word' | 'punctuation' | 'entity';
+  attaches_to?: 'previous' | 'next' | 'both' | 'none';
   is_eos?: boolean;
+  channel?: string;
+  volume?: number;
+  written_form?: TranscriptResult[];
+  spoken_form?: TranscriptResult[];
+}
+
+export interface EditedTranscriptPayload {
+  results: TranscriptResult[];
+}
+
+export interface SaveEditedTranscriptRequest {
+  editedTranscript: EditedTranscriptPayload;
+}
+
+export interface SaveEditedTranscriptResponse {
+  statusCode?: number;
+  message?: string;
 }
 
 export interface TranscriptFeatureError {

@@ -16,7 +16,7 @@
   <!-- Page Header -->
   <div class="mb-6">
     <h2 class="text-2xl font-bold text-gray-900">Nueva transcripción</h2>
-    <p class="text-gray-600">Sube un archivo de audio y configura el idioma</p>
+    <p class="text-gray-600">Sube un archivo de audio o video y configura el idioma</p>
   </div>
 
   <!-- Card -->
@@ -26,7 +26,7 @@
     }
     <!-- File input mock -->
     <div class="space-y-2">
-      <label class="block text-sm font-medium text-gray-700">Archivo de audio</label>
+      <label class="block text-sm font-medium text-gray-700">Archivo de audio o video</label>
       <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500">
         Arrastra y suelta aquí o
         <app-button
@@ -37,9 +37,9 @@
         >
           explora tu equipo
         </app-button>
-        <input #fileInput type="file" accept="audio/*" class="hidden" (change)="onFileSelected($event)" />
+        <input #fileInput type="file" accept="audio/*,video/*,.wav,.mp3,.aac,.ogg,.mpeg,.amr,.m4a,.mp4,.flac" class="hidden" (change)="onFileSelected($event)" />
       </div>
-      <p class="text-xs text-gray-500">Formatos soportados: mp3, wav, m4a. Máx 100 MB.</p>
+      <p class="text-xs text-gray-500">Formatos soportados: wav, mp3, aac, ogg, mpeg, amr, m4a, mp4, flac. Máx 500 MB.</p>
       @if (selectedFile(); as file) {
         <div class="mt-2 flex items-center justify-between bg-gray-50 border border-gray-200 rounded p-2 text-sm">
           <div class="text-gray-700">

@@ -96,6 +96,37 @@ describe('NewTranscription', () => {
     );
   });
 
+  it('should accept supported video files', async () => {
+    const videoFile = new File(['video'], 'meeting.mp4', { type: 'video/mp4' });
+
+    component.onFileSelected({ target: { files: [videoFile] } } as unknown as Event);
+    component.selectedLanguage.set('en');
+    await component.onCreate();
+
+    expect(component.error()).toBeNull();
+    expect(component.selectedFile()).toBe(videoFile);
+    expect(transcriptionsMock.createJob).toHaveBeenCalledWith(expect.any(Object), videoFile);
+  });
+
+  it('should reject unsupported media files', () => {
+    const textFile = new File(['text'], 'notes.txt', { type: 'text/plain' });
+
+    component.onFileSelected({ target: { files: [textFile] } } as unknown as Event);
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('audio o video compatible');
+  });
+
+  it('should reject files over 500 MB', () => {
+    const oversizedFile = new File(['video'], 'large.mp4', { type: 'video/mp4' });
+    Object.defineProperty(oversizedFile, 'size', { value: 501 * 1024 * 1024 });
+
+    component.onFileSelected({ target: { files: [oversizedFile] } } as unknown as Event);
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('500 MB');
+  });
+
   it('should block submit when translation is enabled without target languages', async () => {
     component.selectedFile.set(new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' }));
     component.selectedLanguage.set('en');

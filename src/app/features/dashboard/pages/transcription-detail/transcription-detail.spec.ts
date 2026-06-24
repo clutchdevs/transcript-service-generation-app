@@ -377,6 +377,25 @@ describe('TranscriptionDetail', () => {
     expect(secondFixture.nativeElement.textContent).toContain('Resumen no soportado para este idioma.');
   });
 
+  it('should render top-level feature warning messages from transcript metadata', async () => {
+    currentJob = {
+      ...mockJob,
+      metadata: {
+        translation_errors: [{ type: 'translation_failed', message: 'La traducción falló.' }],
+        summarization_errors: [{ type: 'summarization_failed', message: 'El resumen falló.' }],
+      },
+    };
+
+    const secondFixture = TestBed.createComponent(TranscriptionDetail);
+    secondFixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    secondFixture.detectChanges();
+
+    expect(secondFixture.nativeElement.textContent).toContain('La traducción falló.');
+    expect(secondFixture.nativeElement.textContent).toContain('El resumen falló.');
+  });
+
   it('should refresh once for a matching realtime event', async () => {
     expect(transcriptionsMock.getJobById).toHaveBeenCalledTimes(1);
 

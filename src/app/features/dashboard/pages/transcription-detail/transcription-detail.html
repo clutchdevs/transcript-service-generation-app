@@ -260,18 +260,6 @@
                 </app-button>
               </div>
             }
-            @if (hasError()) {
-              <div>
-                <app-button
-                  variant="primary"
-                  size="md"
-                  [fullWidth]="true"
-                  (clicked)="retryJob()"
-                >
-                  Reintentar
-                </app-button>
-              </div>
-            }
             <div>
               <app-button
                 variant="secondary"
@@ -387,21 +375,6 @@
   <div modal-footer class="flex gap-3">
     <app-button variant="secondary" (clicked)="onCloseCancelModal()">Cerrar</app-button>
     <app-button variant="danger" (clicked)="onConfirmCancel()">Cancelar transcripción</app-button>
-  </div>
-</app-modal>
-
-<app-modal
-  [open]="showRetryModal()"
-  title="¿Reintentar transcripción?"
-  size="md"
-  (closed)="onCloseRetryModal()"
->
-  <p class="text-gray-700">
-    Esta acción estará disponible cuando el backend exponga el endpoint de reintento.
-  </p>
-  <div modal-footer class="flex gap-3">
-    <app-button variant="secondary" (clicked)="onCloseRetryModal()">Cerrar</app-button>
-    <app-button variant="primary" (clicked)="onConfirmRetry()">Entendido</app-button>
   </div>
 </app-modal>
 

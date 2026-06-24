@@ -57,7 +57,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly summarizationErrors = signal<TranscriptFeatureError[]>([]);
 
   readonly showCancelModal = signal(false);
-  readonly showRetryModal = signal(false);
   readonly showDeleteModal = signal(false);
   readonly showEditTitleModal = signal(false);
   readonly editTitleValue = signal('');
@@ -383,15 +382,27 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     }
 
     const rawMetadata = metadata['metadata'] as Record<string, unknown> | undefined;
-    const translationErrors = Array.isArray(rawMetadata?.['translation_errors'])
-      ? rawMetadata['translation_errors'] as TranscriptFeatureError[]
-      : [];
-    const summarizationErrors = Array.isArray(rawMetadata?.['summarization_errors'])
-      ? rawMetadata['summarization_errors'] as TranscriptFeatureError[]
-      : [];
+    const translationErrors = this.extractFeatureErrors(metadata, rawMetadata, 'translation_errors');
+    const summarizationErrors = this.extractFeatureErrors(metadata, rawMetadata, 'summarization_errors');
 
     this.translationErrors.set(translationErrors);
     this.summarizationErrors.set(summarizationErrors);
+  }
+
+  private extractFeatureErrors(
+    metadata: Record<string, unknown>,
+    nestedMetadata: Record<string, unknown> | undefined,
+    key: 'translation_errors' | 'summarization_errors',
+  ): TranscriptFeatureError[] {
+    if (Array.isArray(metadata[key])) {
+      return metadata[key] as TranscriptFeatureError[];
+    }
+
+    if (Array.isArray(nestedMetadata?.[key])) {
+      return nestedMetadata[key] as TranscriptFeatureError[];
+    }
+
+    return [];
   }
 
   private extractTranscriptFromMetadata(metadata: Record<string, unknown> | null): string {
@@ -517,15 +528,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   /**
-   * Retry a failed transcription job
-   */
-  retryJob(): void {
-    if (this.job()) {
-      this.showRetryModal.set(true);
-    }
-  }
-
-  /**
    * Edit transcription title
    */
   editTitle(): void {
@@ -547,10 +549,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
 
   onCloseCancelModal(): void {
     this.showCancelModal.set(false);
-  }
-
-  onCloseRetryModal(): void {
-    this.showRetryModal.set(false);
   }
 
   onCloseDeleteModal(): void {
@@ -583,11 +581,6 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       console.error('Error canceling job:', error);
       this.toast.error('No pudimos cancelar la transcripción.');
     }
-  }
-
-  onConfirmRetry(): void {
-    this.showRetryModal.set(false);
-    this.toast.info('La opción de reintento estará disponible cuando backend habilite el endpoint.');
   }
 
   async onConfirmDelete(): Promise<void> {
