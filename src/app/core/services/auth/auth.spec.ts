@@ -35,6 +35,36 @@ describe('Auth', () => {
     expect(service).toBeTruthy();
   });
 
+  it('should not refresh automatically on construction', () => {
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it('should store login tokens in localStorage', async () => {
+    sessionStorage.setItem('auth_token', 'stale-session-access-token');
+    sessionStorage.setItem('refresh_token', 'stale-session-refresh-token');
+    apiMock.post.mockReturnValue(of({
+      success: true,
+      data: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        user: {
+          id: 'user-1',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      },
+    }));
+
+    await service.login({ email: 'test@example.com', password: '12345678' });
+
+    expect(localStorage.getItem('auth_token')).toBe('access-token');
+    expect(localStorage.getItem('refresh_token')).toBe('refresh-token');
+    expect(sessionStorage.getItem('auth_token')).toBeNull();
+    expect(sessionStorage.getItem('refresh_token')).toBeNull();
+  });
+
   it('should show invalid credentials for 401 login errors', async () => {
     apiMock.post.mockReturnValue(throwError(() => ({ status: 401, message: 'Unauthorized' })));
 
@@ -71,7 +101,7 @@ describe('Auth', () => {
     expect(service.error()).toBe('Ingresa un email válido');
   });
 
-  it('should refresh remembered sessions in localStorage', async () => {
+  it('should refresh persisted sessions in localStorage', async () => {
     localStorage.setItem('auth_token', 'old-access-token');
     localStorage.setItem('refresh_token', 'old-refresh-token');
     apiMock.post.mockReturnValue(of({

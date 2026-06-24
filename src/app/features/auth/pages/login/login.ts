@@ -77,8 +77,7 @@ export class Login implements OnDestroy {
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      rememberMe: [true]
+      password: ['', [Validators.required, Validators.minLength(8)]]
     });
 
     // Clear any existing errors when component initializes
@@ -140,8 +139,7 @@ export class Login implements OnDestroy {
     if (this.loginForm.valid) {
       const credentials: LoginRequest = {
         email: this.loginForm.get('email')?.value,
-        password: this.loginForm.get('password')?.value,
-        rememberMe: this.loginForm.get('rememberMe')?.value
+        password: this.loginForm.get('password')?.value
       };
 
       try {

@@ -7,7 +7,6 @@ import { STORAGE_KEYS } from '../../constants/storage';
 export interface LoginRequest {
   email: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export interface RegisterRequest {
@@ -104,11 +103,6 @@ export interface AuthState {
   error: string | null;
 }
 
-interface StoredRefreshToken {
-  token: string;
-  rememberMe: boolean;
-}
-
 // Initial state
 const initialState: AuthState = {
   user: null,
@@ -126,7 +120,7 @@ export class Auth {
   // Centralized state signal
   private authState = signal<AuthState>(initialState);
   private profileLoadPromise: Promise<void> | null = null;
-  private authStatusPromise: Promise<boolean>;
+  private authStatusPromise: Promise<boolean> | null = null;
 
   // Computed signals for public access
   public readonly user = computed(() => this.authState().user);
@@ -135,8 +129,7 @@ export class Auth {
   public readonly error = computed(() => this.authState().error);
 
   constructor() {
-    // Check authentication status on service initialization
-    this.authStatusPromise = this.checkAuthStatus();
+    this.clearSessionStorageTokens();
   }
 
     /**
@@ -151,7 +144,7 @@ export class Auth {
       const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.LOGIN, credentials));
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken, credentials.rememberMe);
+        this.setTokens(response.data.accessToken, response.data.refreshToken);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
       } else {
@@ -266,15 +259,15 @@ export class Auth {
    */
   async refreshToken(): Promise<boolean> {
     try {
-      const storedRefreshToken = this.getStoredRefreshToken();
-      if (!storedRefreshToken) {
+      const refreshToken = this.getRefreshToken();
+      if (!refreshToken) {
         throw new Error('No refresh token available');
       }
 
-      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken: storedRefreshToken.token }));
+      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken }));
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken, storedRefreshToken.rememberMe);
+        this.setTokens(response.data.accessToken, response.data.refreshToken);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
         return true;
@@ -345,6 +338,13 @@ export class Auth {
     if (this.isAuthenticated()) {
       return Promise.resolve(true);
     }
+
+    if (!this.authStatusPromise) {
+      this.authStatusPromise = this.checkAuthStatus().finally(() => {
+        this.authStatusPromise = null;
+      });
+    }
+
     return this.authStatusPromise;
   }
 
@@ -444,55 +444,42 @@ export class Auth {
   }
 
   /**
-   * Store authentication tokens in appropriate storage based on rememberMe preference
+   * Store authentication tokens in localStorage until logout or refresh expiration.
    * @param accessToken - JWT access token
    * @param refreshToken - JWT refresh token
-   * @param rememberMe - Whether to persist tokens across browser sessions
    */
-  private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = false): void {
-    const storage = rememberMe ? localStorage : sessionStorage;
-    const staleStorage = rememberMe ? sessionStorage : localStorage;
-
-    staleStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    staleStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    storage.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
-    storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+  private setTokens(accessToken: string, refreshToken: string): void {
+    this.clearSessionStorageTokens();
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
   }
 
   /**
-   * Get authentication token from storage (checks both sessionStorage and localStorage)
+   * Get authentication token from persistent storage.
    */
   private getToken(): string | null {
-    // First check sessionStorage, then localStorage
-    return sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   /**
-   * Get refresh token from storage (checks both sessionStorage and localStorage)
+   * Get refresh token from persistent storage.
    */
   private getRefreshToken(): string | null {
-    // First check sessionStorage, then localStorage
-    return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-  }
-
-  private getStoredRefreshToken(): StoredRefreshToken | null {
-    const sessionRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    if (sessionRefreshToken) {
-      return { token: sessionRefreshToken, rememberMe: false };
-    }
-
-    const localRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    return localRefreshToken ? { token: localRefreshToken, rememberMe: true } : null;
+    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   /**
    * Remove authentication tokens from both storage types
    */
   private removeToken(): void {
-    sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    this.clearSessionStorageTokens();
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  }
+
+  private clearSessionStorageTokens(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
 }

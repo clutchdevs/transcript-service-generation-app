@@ -6,7 +6,7 @@ import { from, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 function getTokenFromStorage(): string | null {
-  return sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 }
 
 function isAuthEndpoint(url: string): boolean {
