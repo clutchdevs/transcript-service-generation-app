@@ -70,4 +70,87 @@ describe('Auth', () => {
 
     expect(service.error()).toBe('Ingresa un email válido');
   });
+
+  it('should refresh remembered sessions in localStorage', async () => {
+    localStorage.setItem('auth_token', 'old-access-token');
+    localStorage.setItem('refresh_token', 'old-refresh-token');
+    apiMock.post.mockReturnValue(of({
+      success: true,
+      data: {
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        user: {
+          id: 'user-1',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      },
+    }));
+
+    await expect(service.refreshToken()).resolves.toBe(true);
+
+    expect(apiMock.post).toHaveBeenCalledWith('/api/auth/refresh-token', { refreshToken: 'old-refresh-token' });
+    expect(localStorage.getItem('auth_token')).toBe('new-access-token');
+    expect(localStorage.getItem('refresh_token')).toBe('new-refresh-token');
+    expect(sessionStorage.getItem('auth_token')).toBeNull();
+    expect(sessionStorage.getItem('refresh_token')).toBeNull();
+    expect(service.isAuthenticated()).toBe(true);
+  });
+
+  it('should clear persisted tokens when refresh fails', async () => {
+    localStorage.setItem('auth_token', 'old-access-token');
+    localStorage.setItem('refresh_token', 'old-refresh-token');
+    apiMock.post.mockReturnValue(throwError(() => ({ status: 401, message: 'Unauthorized' })));
+
+    await expect(service.refreshToken()).resolves.toBe(false);
+
+    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+    expect(sessionStorage.getItem('auth_token')).toBeNull();
+    expect(sessionStorage.getItem('refresh_token')).toBeNull();
+    expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('should validate a persisted session before reporting it as authenticated', async () => {
+    TestBed.resetTestingModule();
+    sessionStorage.clear();
+    localStorage.clear();
+    localStorage.setItem('auth_token', 'old-access-token');
+    localStorage.setItem('refresh_token', 'old-refresh-token');
+
+    const startupApiMock = {
+      post: jest.fn().mockReturnValue(of({
+        success: true,
+        data: {
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          user: {
+            id: 'user-1',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        },
+      })),
+      get: jest.fn().mockReturnValue(of({ success: true, data: null })),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: Api,
+          useValue: startupApiMock,
+        }
+      ]
+    });
+
+    const startupService = TestBed.inject(Auth);
+
+    expect(startupService.isAuthenticated()).toBe(false);
+    await expect(startupService.ensureSession()).resolves.toBe(true);
+    expect(startupService.isAuthenticated()).toBe(true);
+  });
 });

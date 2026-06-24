@@ -104,6 +104,11 @@ export interface AuthState {
   error: string | null;
 }
 
+interface StoredRefreshToken {
+  token: string;
+  rememberMe: boolean;
+}
+
 // Initial state
 const initialState: AuthState = {
   user: null,
@@ -121,6 +126,7 @@ export class Auth {
   // Centralized state signal
   private authState = signal<AuthState>(initialState);
   private profileLoadPromise: Promise<void> | null = null;
+  private authStatusPromise: Promise<boolean>;
 
   // Computed signals for public access
   public readonly user = computed(() => this.authState().user);
@@ -130,7 +136,7 @@ export class Auth {
 
   constructor() {
     // Check authentication status on service initialization
-    this.checkAuthStatus();
+    this.authStatusPromise = this.checkAuthStatus();
   }
 
     /**
@@ -260,15 +266,15 @@ export class Auth {
    */
   async refreshToken(): Promise<boolean> {
     try {
-      const refreshToken = this.getRefreshToken();
-      if (!refreshToken) {
+      const storedRefreshToken = this.getStoredRefreshToken();
+      if (!storedRefreshToken) {
         throw new Error('No refresh token available');
       }
 
-      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken }));
+      const response = await firstValueFrom(this.api.post<AuthResponse>(AUTH_ENDPOINTS.REFRESH_TOKEN, { refreshToken: storedRefreshToken.token }));
 
       if (response?.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken);
+        this.setTokens(response.data.accessToken, response.data.refreshToken, storedRefreshToken.rememberMe);
         this.updateUser(response.data.user);
         this.updateAuthState(true);
         return true;
@@ -330,6 +336,16 @@ export class Auth {
         this.profileLoadPromise = null;
       });
     return this.profileLoadPromise;
+  }
+
+  /**
+   * Validate the persisted session before route guards make navigation decisions.
+   */
+  ensureSession(): Promise<boolean> {
+    if (this.isAuthenticated()) {
+      return Promise.resolve(true);
+    }
+    return this.authStatusPromise;
   }
 
   /**
@@ -417,13 +433,14 @@ export class Auth {
   /**
    * Check if user is authenticated on service initialization
    */
-  private checkAuthStatus(): void {
-    const token = this.getToken();
-    if (token) {
-      this.updateAuthState(true);
-      // Optionally fetch user profile here
-      this.getProfile();
+  private async checkAuthStatus(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      this.clearAuthState();
+      return false;
     }
+
+    return this.refreshToken();
   }
 
   /**
@@ -434,6 +451,10 @@ export class Auth {
    */
   private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = false): void {
     const storage = rememberMe ? localStorage : sessionStorage;
+    const staleStorage = rememberMe ? sessionStorage : localStorage;
+
+    staleStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    staleStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     storage.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
     storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
   }
@@ -452,6 +473,16 @@ export class Auth {
   private getRefreshToken(): string | null {
     // First check sessionStorage, then localStorage
     return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  }
+
+  private getStoredRefreshToken(): StoredRefreshToken | null {
+    const sessionRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (sessionRefreshToken) {
+      return { token: sessionRefreshToken, rememberMe: false };
+    }
+
+    const localRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    return localRefreshToken ? { token: localRefreshToken, rememberMe: true } : null;
   }
 
   /**

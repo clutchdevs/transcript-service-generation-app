@@ -18,7 +18,8 @@ describe('authGuard', () => {
     const isAuthenticatedFn = jest.fn(() => false);
     const authSpy = {
       isAuthenticated: isAuthenticatedFn as unknown as () => boolean,
-      ensureProfile: jest.fn()
+      ensureProfile: jest.fn(),
+      ensureSession: jest.fn().mockResolvedValue(false)
     } as unknown as jest.Mocked<Auth>;
 
     TestBed.configureTestingModule({
@@ -36,29 +37,45 @@ describe('authGuard', () => {
     expect(executeGuard).toBeTruthy();
   });
 
-  it('should allow access when user is authenticated', () => {
+  it('should allow access when user is authenticated', async () => {
     (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(true);
-    const result = executeGuard({} as any, {} as any);
+    const result = await executeGuard({} as any, {} as any);
+    expect(result).toBe(true);
+    expect(authService.ensureSession).not.toHaveBeenCalled();
+    expect(authService.ensureProfile).toHaveBeenCalled();
+  });
+
+  it('should allow access when a persisted session is refreshed', async () => {
+    (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(false);
+    authService.ensureSession.mockResolvedValue(true);
+    const result = await executeGuard({} as any, {} as any);
     expect(result).toBe(true);
     expect(authService.ensureProfile).toHaveBeenCalled();
   });
 
-  it('should redirect to auth when user is not authenticated', () => {
+  it('should redirect to auth when user is not authenticated', async () => {
     (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(false);
-    const result = executeGuard({} as any, {} as any) as UrlTree;
+    const result = await executeGuard({} as any, {} as any) as UrlTree;
     expect(router.serializeUrl(result)).toBe('/auth');
     expect(authService.ensureProfile).not.toHaveBeenCalled();
   });
 
-  it('should allow auth routes when user is not authenticated', () => {
+  it('should allow auth routes when user is not authenticated', async () => {
     (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(false);
-    const result = executeGuestGuard({} as any, []);
+    const result = await executeGuestGuard({} as any, []);
     expect(result).toBe(true);
   });
 
-  it('should redirect auth routes to dashboard when user is authenticated', () => {
+  it('should redirect auth routes to dashboard when user is authenticated', async () => {
     (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(true);
-    const result = executeGuestGuard({} as any, []) as UrlTree;
+    const result = await executeGuestGuard({} as any, []) as UrlTree;
+    expect(router.serializeUrl(result)).toBe('/dashboard');
+  });
+
+  it('should redirect auth routes to dashboard when a persisted session is refreshed', async () => {
+    (authService.isAuthenticated as unknown as jest.Mock<boolean, []>).mockReturnValue(false);
+    authService.ensureSession.mockResolvedValue(true);
+    const result = await executeGuestGuard({} as any, []) as UrlTree;
     expect(router.serializeUrl(result)).toBe('/dashboard');
   });
 });
