@@ -8,15 +8,21 @@ import { ToastService } from '../../../../core/services/toast/toast';
 import { TranscriptionDraftService } from '../../../../core/services/transcription-draft/transcription-draft';
 import { Transcriptions as TranscriptionsService } from '../../../../core/services/transcriptions/transcriptions';
 import { TranscriptionJob } from '../../../../core/services/transcriptions/transcriptions.types';
-import { TranscriptResponse, TranscriptTranslationSegment, TranscriptFeatureError } from '../../../../core/services/transcriptions/transcriptions.types';
+import { TranscriptResponse, TranscriptTranslationSegment, TranscriptFeatureError, TranscriptResult } from '../../../../core/services/transcriptions/transcriptions.types';
 import { NavigationService } from '../../../../core/services/navigation/navigation';
 import { TranscriptionEventsCoordinatorService } from '../../../../core/services/transcription-events/transcription-events-coordinator';
-
-interface TranscriptResultLike {
-  type?: 'word' | 'punctuation' | string;
-  attaches_to?: 'previous' | 'next' | string;
-  alternatives?: Array<{ content?: string }>;
-}
+import {
+  cloneTranscriptResults,
+  composeTranscriptFromResults,
+  EditableTranscriptResult,
+  getResultContent,
+  insertResultAfter,
+  isDeletedResult,
+  restoreResult,
+  serializeTranscriptResults,
+  softDeleteResult,
+  updateResultContent,
+} from '../../../../core/integrations/speechmatics/transcript-editor';
 
 @Component({
   selector: 'app-transcription-detail',
@@ -44,6 +50,12 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly job = signal<TranscriptionJob | null>(null);
   readonly transcript = signal<string>('');
   readonly editedTranscript = signal<string>('');
+  readonly originalTranscriptResults = signal<TranscriptResult[]>([]);
+  readonly editedTranscriptResults = signal<EditableTranscriptResult[]>([]);
+  readonly savedEditedTranscriptSnapshot = signal('');
+  readonly editingTokenIndex = signal<number | null>(null);
+  readonly editingTokenValue = signal('');
+  readonly showDeletedTokens = signal(false);
   readonly transcriptMode = signal<'original' | 'edited'>('original');
   readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   readonly lastSavedAt = signal<number | null>(null);
@@ -67,7 +79,11 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   readonly hasSummary = computed(() => this.summaryContent().trim().length > 0);
   readonly translationLanguageCodes = computed(() => Object.keys(this.translationsMap()));
   readonly hasTranslations = computed(() => this.translationLanguageCodes().length > 0);
-  readonly hasUnsavedChanges = computed(() => this.editedTranscript() !== this.transcript());
+  readonly visibleEditedTranscriptResults = computed(() => {
+    const results = this.editedTranscriptResults();
+    return this.showDeletedTokens() ? results : results.filter((result) => !isDeletedResult(result));
+  });
+  readonly hasUnsavedChanges = computed(() => serializeTranscriptResults(this.editedTranscriptResults()) !== this.savedEditedTranscriptSnapshot());
   readonly canSaveEdits = computed(() => this.hasUnsavedChanges() && this.saveStatus() !== 'saving');
   readonly saveStatusMessage = computed(() => {
     switch (this.saveStatus()) {
@@ -247,8 +263,8 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.scheduleAutosave();
   }
 
-  saveEditsManually(): void {
-    const saved = this.persistDraft();
+  async saveEditsManually(): Promise<void> {
+    const saved = await this.persistEditedTranscript();
     if (saved) {
       this.toast.success('Cambios guardados.');
     } else {
@@ -257,13 +273,88 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   restoreEditedFromOriginal(): void {
-    this.editedTranscript.set(this.transcript());
-    const saved = this.persistDraft();
-    if (saved) {
-      this.toast.info('Se restauró el texto original en la versión editable.');
-    } else {
-      this.toast.error('No se pudo restaurar el texto editable.');
+    this.setEditedTranscriptResults(cloneTranscriptResults(this.originalTranscriptResults()));
+    this.saveStatus.set('idle');
+    this.toast.info('Se restauró el texto original en la versión editable.');
+  }
+
+  startTokenEdit(index: number): void {
+    const result = this.editedTranscriptResults()[index];
+    if (!result || isDeletedResult(result)) {
+      return;
     }
+
+    this.editingTokenIndex.set(index);
+    this.editingTokenValue.set(getResultContent(result));
+  }
+
+  onTokenEditInput(event: Event): void {
+    this.editingTokenValue.set((event.target as HTMLInputElement).value);
+  }
+
+  commitTokenEdit(): void {
+    const index = this.editingTokenIndex();
+    const nextContent = this.editingTokenValue().trim();
+
+    if (index === null || !nextContent) {
+      this.cancelTokenEdit();
+      return;
+    }
+
+    this.setEditedTranscriptResults(updateResultContent(this.editedTranscriptResults(), index, nextContent));
+    this.cancelTokenEdit();
+    this.markEditedTranscriptDirty();
+  }
+
+  cancelTokenEdit(): void {
+    this.editingTokenIndex.set(null);
+    this.editingTokenValue.set('');
+  }
+
+  insertTokenAfter(index: number): void {
+    this.setEditedTranscriptResults(insertResultAfter(this.editedTranscriptResults(), index, 'nueva'));
+    this.markEditedTranscriptDirty();
+  }
+
+  deleteToken(index: number): void {
+    this.setEditedTranscriptResults(softDeleteResult(this.editedTranscriptResults(), index));
+    this.markEditedTranscriptDirty();
+  }
+
+  restoreToken(index: number): void {
+    this.setEditedTranscriptResults(restoreResult(this.editedTranscriptResults(), index));
+    this.markEditedTranscriptDirty();
+  }
+
+  toggleDeletedTokens(): void {
+    this.showDeletedTokens.update((value) => !value);
+  }
+
+  tokenContent(result: EditableTranscriptResult): string {
+    return getResultContent(result);
+  }
+
+  tokenClasses(result: EditableTranscriptResult): string {
+    const base = 'inline-flex items-center rounded px-1.5 py-1 text-sm leading-6 transition';
+
+    if (result.edit?.status === 'deleted') {
+      return `${base} bg-red-50 text-red-500 line-through border border-red-100`;
+    }
+
+    if (result.edit?.status === 'inserted') {
+      return `${base} bg-blue-50 text-blue-800 border border-blue-200`;
+    }
+
+    if (result.edit?.status === 'modified') {
+      return `${base} bg-violet-50 text-violet-800 border border-violet-200`;
+    }
+
+    const confidence = result.alternatives?.[0]?.confidence;
+    if (typeof confidence === 'number' && confidence < 0.75) {
+      return `${base} bg-amber-50 text-amber-900 border border-amber-200`;
+    }
+
+    return `${base} text-gray-800 hover:bg-gray-100`;
   }
 
   goBack(): void {
@@ -354,14 +445,14 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   private hydrateTranscriptFromJob(job: TranscriptionJob): boolean {
     this.hydrateInsightsFromMetadata(job.metadata);
 
-    if (typeof job.transcriptionText === 'string' && job.transcriptionText.trim().length > 0) {
-      this.transcript.set(job.transcriptionText);
-      return true;
-    }
-
     const metadataTranscript = this.extractTranscriptFromMetadata(job.metadata);
     if (metadataTranscript) {
       this.transcript.set(metadataTranscript);
+      return true;
+    }
+
+    if (typeof job.transcriptionText === 'string' && job.transcriptionText.trim().length > 0) {
+      this.transcript.set(job.transcriptionText);
       return true;
     }
 
@@ -415,34 +506,15 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       return '';
     }
 
-    return this.composeTranscriptFromResults(rawResults as TranscriptResultLike[]);
-  }
-
-  private composeTranscriptFromResults(results: TranscriptResultLike[]): string {
-    let text = '';
-
-    for (const result of results) {
-      const content = result.alternatives?.[0]?.content;
-      if (!content) {
-        continue;
-      }
-
-      if (result.type === 'punctuation' && result.attaches_to === 'previous') {
-        text += content;
-        continue;
-      }
-
-      if (text.length > 0 && !text.endsWith(' ')) {
-        text += ' ';
-      }
-      text += content;
-    }
-
-    return text.trim();
+    const results = rawResults as TranscriptResult[];
+    this.originalTranscriptResults.set(cloneTranscriptResults(results));
+    return composeTranscriptFromResults(results);
   }
 
   private applyTranscriptResponse(transcriptData: TranscriptResponse): void {
-    const transcriptText = this.composeTranscriptFromResults(transcriptData.results ?? []);
+    const results = transcriptData.results ?? [];
+    const transcriptText = composeTranscriptFromResults(results);
+    this.originalTranscriptResults.set(cloneTranscriptResults(results));
     this.transcript.set(transcriptText);
     this.summaryContent.set(transcriptData.summary?.content?.trim() ?? '');
     this.translationsMap.set(transcriptData.translations ?? {});
@@ -456,16 +528,14 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
   }
 
   private initializeEditableTranscript(job: TranscriptionJob, originalText: string): void {
-    const draft = this.draftService.load(job.id);
+    const backendResults = job.editedTranscript?.results;
+    const editableResults = Array.isArray(backendResults) && backendResults.length > 0
+      ? cloneTranscriptResults(backendResults)
+      : cloneTranscriptResults(this.originalTranscriptResults());
 
-    if (draft) {
-      this.editedTranscript.set(draft.editedText);
-      this.lastSavedAt.set(draft.updatedAt);
-      this.saveStatus.set('saved');
-      return;
-    }
-
-    this.editedTranscript.set(originalText);
+    this.setEditedTranscriptResults(editableResults);
+    this.savedEditedTranscriptSnapshot.set(serializeTranscriptResults(editableResults));
+    this.editedTranscript.set(composeTranscriptFromResults(editableResults) || originalText);
     this.lastSavedAt.set(null);
     this.saveStatus.set('idle');
   }
@@ -474,18 +544,40 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     // TODO(FE-ST-003): Respect editorDefaults.autosaveEnabled and show "Cambios sin guardar" when disabled.
     this.clearAutosaveTimeout();
     this.autosaveTimeout = setTimeout(() => {
-      this.persistDraft();
+      void this.persistEditedTranscript();
     }, this.AUTOSAVE_DEBOUNCE_MS);
   }
 
-  private persistDraft(): boolean {
-    // TODO(FE-ED-002): Replace local-only persistence with backend edited transcript endpoints when BE-201/BE-202 exist.
+  private async persistEditedTranscript(): Promise<boolean> {
     const currentJob = this.job();
     if (!currentJob) {
       return false;
     }
 
     this.saveStatus.set('saving');
+
+    try {
+      await this.transcriptionsService.saveEditedTranscript(currentJob.id, {
+        editedTranscript: {
+          results: this.editedTranscriptResults(),
+        },
+      });
+      this.savedEditedTranscriptSnapshot.set(serializeTranscriptResults(this.editedTranscriptResults()));
+      this.lastSavedAt.set(Date.now());
+      this.saveStatus.set('saved');
+      return true;
+    } catch (error) {
+      console.error('Error saving edited transcript:', error);
+      this.saveStatus.set('error');
+      return false;
+    }
+  }
+
+  private persistDraft(): boolean {
+    const currentJob = this.job();
+    if (!currentJob) {
+      return false;
+    }
 
     try {
       const savedDraft = this.draftService.save(currentJob.id, this.transcript(), this.editedTranscript());
@@ -496,6 +588,16 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
       this.saveStatus.set('error');
       return false;
     }
+  }
+
+  private setEditedTranscriptResults(results: EditableTranscriptResult[]): void {
+    this.editedTranscriptResults.set(results);
+    this.editedTranscript.set(composeTranscriptFromResults(results));
+  }
+
+  private markEditedTranscriptDirty(): void {
+    this.saveStatus.set('idle');
+    this.scheduleAutosave();
   }
 
   private clearAutosaveTimeout(): void {
@@ -510,6 +612,12 @@ export class TranscriptionDetail implements OnInit, OnDestroy {
     this.transcriptMode.set('original');
     this.transcript.set('');
     this.editedTranscript.set('');
+    this.originalTranscriptResults.set([]);
+    this.editedTranscriptResults.set([]);
+    this.savedEditedTranscriptSnapshot.set('');
+    this.editingTokenIndex.set(null);
+    this.editingTokenValue.set('');
+    this.showDeletedTokens.set(false);
     this.summaryContent.set('');
     this.translationsMap.set({});
     this.translationErrors.set([]);

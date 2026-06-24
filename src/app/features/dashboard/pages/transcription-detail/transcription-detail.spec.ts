@@ -30,7 +30,29 @@ const mockJob = {
   processingStartedAt: null,
   processingCompletedAt: null,
   errorMessage: null,
-  metadata: null,
+  metadata: {
+    results: [
+      {
+        alternatives: [{ content: 'Texto', confidence: 0.96, language: 'es', speaker: 'S1' }],
+        start_time: 0,
+        end_time: 0.4,
+        type: 'word',
+      },
+      {
+        alternatives: [{ content: 'inicial', confidence: 0.72, language: 'es', speaker: 'S1' }],
+        start_time: 0.5,
+        end_time: 1,
+        type: 'word',
+      },
+      {
+        alternatives: [{ content: '.', confidence: 1, language: 'es', speaker: 'S1' }],
+        start_time: 1,
+        end_time: 1,
+        type: 'punctuation',
+        attaches_to: 'previous',
+      },
+    ],
+  },
   isDeleted: false,
   deletedAt: null,
 };
@@ -50,6 +72,7 @@ describe('TranscriptionDetail', () => {
     cancelJob: jest.Mock;
     getJobTranscript: jest.Mock;
     getJobTranscriptData: jest.Mock;
+    saveEditedTranscript: jest.Mock;
     formatFileSize: jest.Mock;
     formatDuration: jest.Mock;
     getStatusName: jest.Mock;
@@ -80,6 +103,7 @@ describe('TranscriptionDetail', () => {
       deleteJob: jest.fn().mockResolvedValue({ jobId: mockJob.id }),
       cancelJob: jest.fn().mockResolvedValue({ ...mockJob, statusId: 5 }),
       getJobTranscript: jest.fn().mockResolvedValue(''),
+      saveEditedTranscript: jest.fn().mockResolvedValue({ statusCode: 200, message: 'Edited transcript saved' }),
       getJobTranscriptData: jest.fn().mockResolvedValue({
         format: '2.9',
         job: {
@@ -194,38 +218,59 @@ describe('TranscriptionDetail', () => {
     expect(transcriptionsMock.updateJobTitle).toHaveBeenCalledWith('test-job-id', 'Título actualizado');
   });
 
-  it('should switch to editable mode and save edited transcript', () => {
+  it('should switch to editable mode and save edited transcript results', async () => {
     const editableButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
       .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Editable') as HTMLButtonElement;
 
     editableButton.click();
     fixture.detectChanges();
 
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    expect(textarea).toBeTruthy();
-
-    textarea.value = 'Texto editado por el usuario';
-    textarea.dispatchEvent(new Event('input'));
+    component.startTokenEdit(1);
+    component.editingTokenValue.set('editado');
+    component.commitTokenEdit();
     fixture.detectChanges();
 
     const saveButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
       .find((btn: HTMLButtonElement) => btn.textContent?.trim() === 'Guardar cambios') as HTMLButtonElement;
 
     saveButton.click();
+    await Promise.resolve();
     fixture.detectChanges();
 
-    expect(draftServiceMock.save).toHaveBeenCalled();
-    expect(component.editedTranscript()).toBe('Texto editado por el usuario');
+    expect(transcriptionsMock.saveEditedTranscript).toHaveBeenCalledWith('test-job-id', {
+      editedTranscript: {
+        results: expect.arrayContaining([
+          expect.objectContaining({
+            alternatives: [expect.objectContaining({ content: 'editado' })],
+            edit: expect.objectContaining({ status: 'modified', originalContent: 'inicial' }),
+          }),
+        ]),
+      },
+    });
+    expect(component.editedTranscript()).toBe('Texto editado.');
     expect(component.saveStatus()).toBe('saved');
   });
 
-  it('should restore local draft when available', async () => {
-    draftServiceMock.load.mockReturnValue({
-      jobId: 'test-job-id',
-      originalText: 'Texto de transcripción inicial',
-      editedText: 'Texto recuperado del borrador',
-      updatedAt: 1713952800000,
-    });
+  it('should hydrate backend edited transcript when available', async () => {
+    currentJob = {
+      ...mockJob,
+      editedTranscript: {
+        results: [
+          {
+            alternatives: [{ content: 'Versión', confidence: 1, language: 'es', speaker: 'S1' }],
+            start_time: 0,
+            end_time: 0.5,
+            type: 'word',
+          },
+          {
+            alternatives: [{ content: 'backend', confidence: 1, language: 'es', speaker: 'S1' }],
+            start_time: 0.5,
+            end_time: 1,
+            type: 'word',
+          },
+        ],
+      },
+    };
 
     const secondFixture = TestBed.createComponent(TranscriptionDetail);
     const secondComponent = secondFixture.componentInstance;
@@ -234,9 +279,8 @@ describe('TranscriptionDetail', () => {
     await Promise.resolve();
     secondFixture.detectChanges();
 
-    expect(secondComponent.editedTranscript()).toBe('Texto recuperado del borrador');
-    expect(secondComponent.saveStatus()).toBe('saved');
-    expect(secondComponent.lastSavedAt()).toBe(1713952800000);
+    expect(secondComponent.editedTranscript()).toBe('Versión backend');
+    expect(secondComponent.saveStatus()).toBe('idle');
   });
 
   it('should disable manual save when there are no changes', () => {
@@ -252,9 +296,9 @@ describe('TranscriptionDetail', () => {
     expect(saveButton).toBeTruthy();
     expect(saveButton.disabled).toBe(true);
 
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    textarea.value = 'Texto editado para habilitar guardado';
-    textarea.dispatchEvent(new Event('input'));
+    component.startTokenEdit(0);
+    component.editingTokenValue.set('Contenido');
+    component.commitTokenEdit();
     fixture.detectChanges();
 
     const updatedSaveButton = Array.from(fixture.nativeElement.querySelectorAll('button'))
@@ -263,7 +307,7 @@ describe('TranscriptionDetail', () => {
     expect(updatedSaveButton.disabled).toBe(false);
   });
 
-  it('should autosave edited transcript after debounce delay', () => {
+  it('should autosave edited transcript after debounce delay', async () => {
     jest.useFakeTimers();
 
     try {
@@ -273,18 +317,20 @@ describe('TranscriptionDetail', () => {
       editableButton.click();
       fixture.detectChanges();
 
-      const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-      textarea.value = 'Texto editado para autosave';
-      textarea.dispatchEvent(new Event('input'));
+      component.startTokenEdit(0);
+      component.editingTokenValue.set('Autosave');
+      component.commitTokenEdit();
       fixture.detectChanges();
 
-      expect(draftServiceMock.save).not.toHaveBeenCalled();
+      expect(transcriptionsMock.saveEditedTranscript).not.toHaveBeenCalled();
 
       jest.advanceTimersByTime(1400);
-      expect(draftServiceMock.save).not.toHaveBeenCalled();
+      await Promise.resolve();
+      expect(transcriptionsMock.saveEditedTranscript).not.toHaveBeenCalled();
 
       jest.advanceTimersByTime(100);
-      expect(draftServiceMock.save).toHaveBeenCalledTimes(1);
+      await Promise.resolve();
+      expect(transcriptionsMock.saveEditedTranscript).toHaveBeenCalledTimes(1);
     } finally {
       jest.useRealTimers();
     }
@@ -316,9 +362,9 @@ describe('TranscriptionDetail', () => {
     editableButton.click();
     fixture.detectChanges();
 
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    textarea.value = 'Texto temporal';
-    textarea.dispatchEvent(new Event('input'));
+    component.startTokenEdit(0);
+    component.editingTokenValue.set('Temporal');
+    component.commitTokenEdit();
     fixture.detectChanges();
 
     const saveButtonBeforeRestore = Array.from(fixture.nativeElement.querySelectorAll('button'))

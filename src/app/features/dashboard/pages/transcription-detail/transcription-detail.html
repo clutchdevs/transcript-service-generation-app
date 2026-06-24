@@ -130,6 +130,9 @@
                 @if (lastSavedRelative() && saveStatus() !== 'saving') {
                   <span class="text-xs text-gray-500">Último guardado {{ lastSavedRelative() }}</span>
                 }
+                <app-button variant="ghost" size="sm" (clicked)="toggleDeletedTokens()">
+                  {{ showDeletedTokens() ? 'Ocultar eliminadas' : 'Mostrar eliminadas' }}
+                </app-button>
               </div>
             }
           </div>
@@ -141,12 +144,54 @@
             </div>
           } @else if (hasTranscript()) {
             @if (transcriptMode() === 'edited') {
-              <textarea
-                [value]="editedTranscript()"
-                (input)="onEditedTranscriptInput($event)"
-                class="w-full min-h-[380px] rounded-md border border-gray-300 px-3 py-3 text-sm text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Edita aquí el contenido de la transcripción"
-              ></textarea>
+              <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
+                <div class="mb-3 flex flex-wrap gap-2 text-xs text-gray-600">
+                  <span class="rounded-full bg-amber-50 px-2 py-1 text-amber-800 ring-1 ring-amber-200">Baja confianza</span>
+                  <span class="rounded-full bg-violet-50 px-2 py-1 text-violet-800 ring-1 ring-violet-200">Modificada</span>
+                  <span class="rounded-full bg-blue-50 px-2 py-1 text-blue-800 ring-1 ring-blue-200">Insertada</span>
+                  <span class="rounded-full bg-red-50 px-2 py-1 text-red-700 ring-1 ring-red-200">Eliminada</span>
+                </div>
+
+                <div class="min-h-[280px] rounded-md bg-white p-4 leading-9 shadow-inner">
+                  @for (result of editedTranscriptResults(); track $index) {
+                    @if (showDeletedTokens() || result.edit?.status !== 'deleted') {
+                      <span class="group relative mr-1 inline-flex items-center gap-1 align-baseline">
+                        @if (editingTokenIndex() === $index) {
+                          <input
+                            type="text"
+                            [value]="editingTokenValue()"
+                            (input)="onTokenEditInput($event)"
+                            (keydown.enter)="commitTokenEdit()"
+                            (keydown.escape)="cancelTokenEdit()"
+                            (blur)="commitTokenEdit()"
+                            class="w-28 rounded border border-blue-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            autofocus
+                          />
+                        } @else {
+                          <button
+                            type="button"
+                            [class]="tokenClasses(result)"
+                            [title]="'Inicio ' + result.start_time + 's · Fin ' + result.end_time + 's'"
+                            (click)="startTokenEdit($index)"
+                          >
+                            {{ tokenContent(result) }}
+                          </button>
+                        }
+
+                        <span class="hidden items-center gap-1 rounded-md border border-gray-200 bg-white px-1 py-0.5 shadow-sm group-hover:inline-flex">
+                          <button type="button" class="text-xs text-blue-600 hover:text-blue-800" (click)="insertTokenAfter($index)">+ después</button>
+                          @if (result.edit?.status === 'deleted' || result.edit?.status === 'modified' || result.edit?.status === 'inserted') {
+                            <button type="button" class="text-xs text-gray-600 hover:text-gray-900" (click)="restoreToken($index)">Restaurar</button>
+                          }
+                          @if (result.edit?.status !== 'deleted') {
+                            <button type="button" class="text-xs text-red-600 hover:text-red-800" (click)="deleteToken($index)">Eliminar</button>
+                          }
+                        </span>
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
             } @else {
               <div class="prose max-w-none">
                 <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">{{ transcript() }}</p>
