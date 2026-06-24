@@ -52,11 +52,22 @@ export class NewTranscription {
     { value: 'bullets', label: 'Viñetas' },
     { value: 'paragraphs', label: 'Párrafos' },
   ];
-  readonly translationTargetOptions: SelectOption[] = TRANSLATION_TARGET_OPTIONS;
+  readonly translationTargetOptions = computed(() => this.getTranslationTargetOptions(this.selectedLanguage()));
+  readonly translationHelpText = computed(() => {
+    if (this.selectedLanguage() === 'en') {
+      return 'Origen inglés: puedes traducir hasta 5 idiomas destino compatibles.';
+    }
+
+    if (this.isTranslationAvailable()) {
+      return 'Origen no inglés: Speechmatics solo permite traducir este idioma hacia inglés.';
+    }
+
+    return 'Traducción disponible solo entre inglés y los idiomas compatibles.';
+  });
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly isTranslationAvailable = computed(() => this.selectedLanguage() === 'en');
+  readonly isTranslationAvailable = computed(() => this.translationTargetOptions().length > 0);
   readonly canSubmit = computed(() => {
     if (!this.selectedFile() || this.isLoading()) {
       return false;
@@ -140,7 +151,7 @@ export class NewTranscription {
       this.selectedTargetLanguages.set([]);
     }
 
-    this.selectedTargetLanguages.update((languages) => languages.filter((code) => code !== value));
+    this.selectedTargetLanguages.update((languages) => this.filterValidTranslationTargets(value, languages));
   }
 
   onOperatingPointChange(event: Event): void {
@@ -162,7 +173,10 @@ export class NewTranscription {
     this.isTranslationEnabled.set(enabled);
     if (!enabled) {
       this.selectedTargetLanguages.set([]);
+      return;
     }
+
+    this.selectedTargetLanguages.update((languages) => this.filterValidTranslationTargets(this.selectedLanguage(), languages));
   }
 
   onSummaryContentTypeChange(event: Event): void {
@@ -199,6 +213,9 @@ export class NewTranscription {
 
   isTargetLanguageDisabled(code: string): boolean {
     if (code === this.selectedLanguage()) {
+      return true;
+    }
+    if (!this.translationTargetOptions().some((option) => option.value === code)) {
       return true;
     }
     if (this.isTargetLanguageSelected(code)) {
@@ -288,7 +305,7 @@ export class NewTranscription {
     this.summaryType.set(batchDefaults.summarization.type);
 
     this.isTranslationEnabled.set(batchDefaults.translation.enabled);
-    this.selectedTargetLanguages.set(batchDefaults.translation.targetLanguages.filter((code) => code !== this.selectedLanguage()));
+    this.selectedTargetLanguages.set(this.filterValidTranslationTargets(this.selectedLanguage(), batchDefaults.translation.targetLanguages));
 
     if (!this.isTranslationAvailable()) {
       this.isTranslationEnabled.set(false);
@@ -311,5 +328,21 @@ export class NewTranscription {
     const hasSupportedMime = file.type.startsWith('audio/') || file.type.startsWith('video/');
 
     return hasSupportedExtension && (hasSupportedMime || file.type === '');
+  }
+
+  private getTranslationTargetOptions(sourceLanguage: string): SelectOption[] {
+    if (sourceLanguage === 'en') {
+      return TRANSLATION_TARGET_OPTIONS;
+    }
+
+    const canTranslateToEnglish = TRANSLATION_TARGET_OPTIONS.some((option) => option.value === sourceLanguage);
+    return canTranslateToEnglish ? [{ value: 'en', label: 'Inglés' }] : [];
+  }
+
+  private filterValidTranslationTargets(sourceLanguage: string, targetLanguages: string[]): string[] {
+    const validTargets = new Set(this.getTranslationTargetOptions(sourceLanguage).map((option) => option.value));
+    return targetLanguages
+      .filter((code) => code !== sourceLanguage && validTargets.has(code))
+      .slice(0, this.MAX_TRANSLATION_TARGETS);
   }
 }

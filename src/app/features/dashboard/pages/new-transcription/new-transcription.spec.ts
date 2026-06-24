@@ -139,15 +139,53 @@ describe('NewTranscription', () => {
     expect(component.error()).toContain('Selecciona al menos un idioma de traducción');
   });
 
-  it('should disable translation when source language is not english', () => {
+  it('should allow translating from english to multiple supported target languages', async () => {
+    component.selectedFile.set(new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' }));
     component.selectedLanguage.set('en');
     component.isTranslationEnabled.set(true);
-    component.selectedTargetLanguages.set(['es']);
+    component.selectedTargetLanguages.set(['es', 'de']);
+
+    await component.onCreate();
+
+    expect(transcriptionsMock.createJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        translation_config: {
+          target_languages: ['es', 'de'],
+        },
+      }),
+      expect.any(File),
+    );
+  });
+
+  it('should allow translating from a supported non-english language to english', async () => {
+    component.selectedFile.set(new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' }));
+    component.selectedLanguage.set('es');
+    component.isTranslationEnabled.set(true);
+    component.selectedTargetLanguages.set(['en']);
+
+    await component.onCreate();
+
+    expect(transcriptionsMock.createJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcription_config: expect.objectContaining({ language: 'es' }),
+        translation_config: {
+          target_languages: ['en'],
+        },
+      }),
+      expect.any(File),
+    );
+  });
+
+  it('should remove invalid non-english to non-english translation targets', () => {
+    component.selectedLanguage.set('en');
+    component.isTranslationEnabled.set(true);
+    component.selectedTargetLanguages.set(['es', 'de']);
 
     component.onLanguageChange({ target: { value: 'es' } } as unknown as Event);
 
-    expect(component.isTranslationEnabled()).toBe(false);
+    expect(component.isTranslationEnabled()).toBe(true);
     expect(component.selectedTargetLanguages()).toEqual([]);
+    expect(component.translationTargetOptions()).toEqual([{ value: 'en', label: 'Inglés' }]);
   });
 
   it('should initialize with defaults from settings service', () => {

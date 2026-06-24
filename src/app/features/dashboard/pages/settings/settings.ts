@@ -21,7 +21,7 @@ export class Settings {
 
   readonly languages = LANGUAGES;
   readonly operatingPoints = OPERATING_POINTS;
-  readonly translationTargetOptions = TRANSLATION_TARGET_OPTIONS;
+  readonly englishTranslationTargetOption: SelectOption = { value: 'en', label: 'Inglés' };
   // TODO(FE-UI-002): Migrate native Settings selects to app-select after option types are unified.
   readonly autosaveDebounceOptions: SelectOption[] = [
     { value: '1000', label: '1 segundo' },
@@ -33,16 +33,46 @@ export class Settings {
 
   constructor() {
     this.settings = this.appSettings.load();
+    this.normalizeTranslationDefaults();
+  }
+
+  get translationTargetOptions(): SelectOption[] {
+    return this.getTranslationTargetOptions(this.settings.batchDefaults.language);
+  }
+
+  get translationHelpText(): string {
+    if (this.settings.batchDefaults.language === 'en') {
+      return 'Origen inglés: puedes definir hasta 5 idiomas destino compatibles.';
+    }
+
+    if (this.translationTargetOptions.length > 0) {
+      return 'Origen no inglés: Speechmatics solo permite traducir este idioma hacia inglés.';
+    }
+
+    return 'Traducción disponible solo entre inglés y los idiomas compatibles.';
   }
 
   onSave(): void {
+    this.normalizeTranslationDefaults();
     this.settings = this.appSettings.save(this.settings);
     this.toast.success('Preferencias guardadas.');
   }
 
   onReset(): void {
     this.settings = this.appSettings.reset();
+    this.normalizeTranslationDefaults();
     this.toast.info('Preferencias restablecidas al valor por defecto.');
+  }
+
+  onBatchLanguageChange(language: string): void {
+    this.settings = {
+      ...this.settings,
+      batchDefaults: {
+        ...this.settings.batchDefaults,
+        language,
+      },
+    };
+    this.normalizeTranslationDefaults();
   }
 
   onTranslationTargetToggle(event: Event): void {
@@ -51,6 +81,10 @@ export class Settings {
     const targetLanguages = this.settings.batchDefaults.translation.targetLanguages;
 
     if (checkbox.checked) {
+      if (!this.translationTargetOptions.some((option) => option.value === code)) {
+        checkbox.checked = false;
+        return;
+      }
       if (targetLanguages.includes(code)) {
         return;
       }
@@ -89,9 +123,41 @@ export class Settings {
 
   isTargetLanguageDisabled(code: string): boolean {
     const selected = this.settings.batchDefaults.translation.targetLanguages;
+    if (!this.translationTargetOptions.some((option) => option.value === code)) {
+      return true;
+    }
     if (selected.includes(code)) {
       return false;
     }
     return selected.length >= 5;
+  }
+
+  private normalizeTranslationDefaults(): void {
+    const language = this.settings.batchDefaults.language;
+    const validTargets = new Set(this.getTranslationTargetOptions(language).map((option) => option.value));
+    const targetLanguages = this.settings.batchDefaults.translation.targetLanguages
+      .filter((code) => code !== language && validTargets.has(code))
+      .slice(0, 5);
+
+    this.settings = {
+      ...this.settings,
+      batchDefaults: {
+        ...this.settings.batchDefaults,
+        translation: {
+          ...this.settings.batchDefaults.translation,
+          enabled: this.settings.batchDefaults.translation.enabled && validTargets.size > 0,
+          targetLanguages,
+        },
+      },
+    };
+  }
+
+  private getTranslationTargetOptions(sourceLanguage: string): SelectOption[] {
+    if (sourceLanguage === 'en') {
+      return TRANSLATION_TARGET_OPTIONS;
+    }
+
+    const canTranslateToEnglish = TRANSLATION_TARGET_OPTIONS.some((option) => option.value === sourceLanguage);
+    return canTranslateToEnglish ? [this.englishTranslationTargetOption] : [];
   }
 }

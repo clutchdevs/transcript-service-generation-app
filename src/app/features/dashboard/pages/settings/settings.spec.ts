@@ -65,4 +65,56 @@ describe('Settings', () => {
     expect(appSettingsMock.reset).toHaveBeenCalled();
     expect(toastMock.info).toHaveBeenCalled();
   });
+
+  it('should show english as the only translation target for supported non-english default language', () => {
+    component.onBatchLanguageChange('es');
+
+    expect(component.translationTargetOptions).toEqual([{ value: 'en', label: 'Inglés' }]);
+  });
+
+  it('should remove invalid translation targets when default language changes', () => {
+    component.settings = {
+      ...DEFAULT_APP_SETTINGS,
+      batchDefaults: {
+        ...DEFAULT_APP_SETTINGS.batchDefaults,
+        language: 'en',
+        translation: {
+          enabled: true,
+          targetLanguages: ['es', 'de'],
+        },
+      },
+    };
+
+    component.onBatchLanguageChange('es');
+
+    expect(component.settings.batchDefaults.translation.enabled).toBe(true);
+    expect(component.settings.batchDefaults.translation.targetLanguages).toEqual([]);
+    expect(component.isTargetLanguageDisabled('de')).toBe(true);
+    expect(component.isTargetLanguageDisabled('en')).toBe(false);
+  });
+
+  it('should disable translation defaults for unsupported source language', () => {
+    component.settings = {
+      ...DEFAULT_APP_SETTINGS,
+      batchDefaults: {
+        ...DEFAULT_APP_SETTINGS.batchDefaults,
+        language: 'auto',
+        translation: {
+          enabled: true,
+          targetLanguages: ['en'],
+        },
+      },
+    };
+
+    component.onSave();
+
+    expect(appSettingsMock.save).toHaveBeenCalledWith(expect.objectContaining({
+      batchDefaults: expect.objectContaining({
+        translation: {
+          enabled: false,
+          targetLanguages: [],
+        },
+      }),
+    }));
+  });
 });

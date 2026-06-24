@@ -126,7 +126,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="text-sm font-medium text-gray-800">Traducir transcripción</p>
-          <p class="text-xs text-gray-500">Máximo 5 idiomas destino. Solo para origen inglés en esta versión.</p>
+          <p class="text-xs text-gray-500">{{ translationHelpText() }}</p>
         </div>
         <input
           type="checkbox"
@@ -137,14 +137,14 @@
       </div>
 
       @if (!isTranslationAvailable()) {
-        <p class="text-xs text-gray-500">Selecciona inglés como idioma de origen para habilitar traducción.</p>
+        <p class="text-xs text-gray-500">Selecciona inglés o un idioma compatible para habilitar traducción.</p>
       }
 
       @if (isTranslationEnabled()) {
         <div class="space-y-2">
           <p class="text-xs font-medium text-gray-600">Idiomas destino</p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
-            @for (opt of translationTargetOptions; track opt.value) {
+            @for (opt of translationTargetOptions(); track opt.value) {
               <label class="flex items-center gap-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
